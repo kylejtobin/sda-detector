@@ -5,7 +5,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Pydantic v2](https://img.shields.io/badge/pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code style: SDA](https://img.shields.io/badge/code%20style-SDA-purple.svg)](https://github.com/kylejobin/sda-detector)
-[![License](https://img.shields.io/github/license/kylejobin/sda-detector)](https://github.com/kylejobin/sda-detector/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/kylejtobin/sda-detector)](https://github.com/kylejobin/sda-detector/blob/main/LICENSE)
 
 ## 🎯 What is SDA Detector?
 
