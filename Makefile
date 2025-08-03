@@ -1,4 +1,4 @@
-.PHONY: help setup check test clean install-uv run self-analyze
+.PHONY: help setup check test clean install-uv run self-analyze legacy-run legacy-self-analyze
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
@@ -30,10 +30,20 @@ run: ## Run SDA detector on a file (usage: make run FILE=path/to/file.py)
 	@if [ -z "$(FILE)" ]; then \
 		echo "❌ Please specify a file: make run FILE=path/to/file.py"; \
 	else \
-		uv run python src/sda_detector.py "$(FILE)"; \
+		PYTHONPATH=src uv run python -m sda_detector "$(FILE)"; \
 	fi
 
 self-analyze: ## Run SDA detector on itself (dogfooding)
+	PYTHONPATH=src uv run python -m sda_detector src/sda_detector "SDA Detector Self-Analysis"
+
+legacy-run: ## Run original single-file detector: make legacy-run FILE=path/to/file.py
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Please specify a file: make legacy-run FILE=path/to/file.py"; \
+	else \
+		uv run python src/sda_detector.py "$(FILE)"; \
+	fi
+
+legacy-self-analyze: ## Run original detector on itself
 	uv run python src/sda_detector.py src/sda_detector.py "SDA Detector Self-Analysis"
 
 clean: ## Clean up caches
