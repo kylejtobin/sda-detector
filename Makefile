@@ -1,4 +1,4 @@
-.PHONY: help setup check test clean install-uv
+.PHONY: help setup check test clean install-uv run self-analyze
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
@@ -14,8 +14,7 @@ install-uv: ## Install uv package manager
 
 setup: install-uv ## Setup SDA detector dependencies
 	@echo "📦 Installing dependencies..."
-	@uv init --no-readme
-	@uv add "pydantic[experimental]>=2.10.0" "pydantic-settings>=2.6.0"
+	@uv sync
 	@echo "✅ SDA detector setup complete"
 
 dev: ## Install dev dependencies
@@ -26,6 +25,16 @@ check: ## Quick check
 
 test: ## Run tests
 	uv run pytest
+
+run: ## Run SDA detector on a file (usage: make run FILE=path/to/file.py)
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Please specify a file: make run FILE=path/to/file.py"; \
+	else \
+		uv run python src/sda_detector.py "$(FILE)"; \
+	fi
+
+self-analyze: ## Run SDA detector on itself (dogfooding)
+	uv run python src/sda_detector.py src/sda_detector.py "SDA Detector Self-Analysis"
 
 clean: ## Clean up caches
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/ __pycache__/
