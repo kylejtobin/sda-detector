@@ -42,6 +42,11 @@ coordinate external resources (file system, AST parsing).
 """
 
 # Core exports organized by module
+from .config import (
+    AnalysisSettings,
+    ModuleClassificationRules,
+    config,
+)
 from .models import (
     AnalysisConfig,
     AnalysisContext,
@@ -110,6 +115,10 @@ def print_report(report: ArchitectureReport, module_name: str) -> None:
 
 # Public API for __all__
 __all__ = [
+    # Configuration
+    "AnalysisSettings",
+    "ModuleClassificationRules",
+    "config",
     # Domain models
     "AnalysisConfig",
     "AnalysisContext",

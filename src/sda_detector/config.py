@@ -4,8 +4,8 @@ This demonstrates SDA best practice: configuration as a rich domain model
 with validation, computed fields, and intelligent defaults.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel, Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .models import ModuleType
 
@@ -17,7 +17,7 @@ class ModuleClassificationRules(BaseModel):
     different types of modules based on file path patterns.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = {"frozen": True}
 
     # Infrastructure patterns (boundary/external systems)
     infrastructure_patterns: list[str] = Field(
@@ -259,11 +259,10 @@ class AnalysisSettings(BaseSettings):
     - Intelligent defaults
     """
 
-    model_config = ConfigDict(
-        frozen=True,
-        env_prefix="SDA_",  # Environment variables like SDA_STRICT_MODE=true
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        frozen=True,
     )
 
     # Analysis behavior configuration

@@ -41,30 +41,31 @@ The goal is to make your data so intelligent that it knows what to do with itsel
 ### Installation
 
 ```bash
-# Requires Python 3.12+ and Pydantic v2
-pip install pydantic
+# Clone the repository
+git clone https://github.com/kylejobin/sda-detector.git
+cd sda-detector
+
+# One-command setup (installs all dependencies and package in dev mode)
+make setup
 ```
 
 ### Basic Usage
 
 ```bash
-# Quick setup
-make setup
-
-# Analyze any file
+# Analyze any file (after running 'make setup')
 make run FILE=my_module.py
 
 # Self-analysis (dogfooding)
 make self-analyze
 
 # Manual execution
-uv run python src/sda_detector.py my_module.py
+uv run python -m sda_detector my_module.py
 
 # Analyze a directory
-uv run python src/sda_detector.py src/domain/
+uv run python -m sda_detector src/domain/
 
 # Analyze with custom name
-uv run python src/sda_detector.py src/models/ "User Domain Models"
+uv run python -m sda_detector src/models/ "User Domain Models"
 ```
 
 ### Example Output
@@ -504,9 +505,9 @@ make self-analyze
 make run FILE=path/to/your/file.py
 
 # Manual execution
-uv run python src/sda_detector.py src/sda_detector.py
+uv run python -m sda_detector src/sda_detector/
 
-# Expected output: ~84% patterns, ~16% violations for tooling module
+# Expected output: ~85% patterns, ~15% violations for tooling module
 # The detector practices what it preaches! 🔍
 ```
 

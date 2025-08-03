@@ -14,7 +14,8 @@ install-uv: ## Install uv package manager
 
 setup: install-uv ## Setup SDA detector dependencies
 	@echo "📦 Installing dependencies..."
-	@uv sync
+	@uv sync --dev
+	@uv pip install -e .
 	@echo "✅ SDA detector setup complete"
 
 dev: ## Install dev dependencies
@@ -30,21 +31,17 @@ run: ## Run SDA detector on a file (usage: make run FILE=path/to/file.py)
 	@if [ -z "$(FILE)" ]; then \
 		echo "❌ Please specify a file: make run FILE=path/to/file.py"; \
 	else \
-		PYTHONPATH=src uv run python -m sda_detector "$(FILE)"; \
+		uv run python -m sda_detector "$(FILE)"; \
 	fi
 
 self-analyze: ## Run SDA detector on itself (dogfooding)
-	PYTHONPATH=src uv run python -m sda_detector src/sda_detector "SDA Detector Self-Analysis"
+	uv run python -m sda_detector src/sda_detector "SDA Detector Self-Analysis"
 
-legacy-run: ## Run original single-file detector: make legacy-run FILE=path/to/file.py
-	@if [ -z "$(FILE)" ]; then \
-		echo "❌ Please specify a file: make legacy-run FILE=path/to/file.py"; \
-	else \
-		uv run python src/sda_detector.py "$(FILE)"; \
-	fi
+legacy-run: ## DEPRECATED - Use 'make run' instead
+	@echo "❌ legacy-run is deprecated. Use 'make run' instead."
 
-legacy-self-analyze: ## Run original detector on itself
-	uv run python src/sda_detector.py src/sda_detector.py "SDA Detector Self-Analysis"
+legacy-self-analyze: ## Run original detector on itself (DEPRECATED - file no longer exists)
+	@echo "❌ Original sda_detector.py has been removed. Use 'make self-analyze' instead."
 
 clean: ## Clean up caches
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/ __pycache__/
