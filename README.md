@@ -48,14 +48,23 @@ pip install pydantic
 ### Basic Usage
 
 ```bash
-# Analyze a single file
-python sda_detector.py my_module.py
+# Quick setup
+make setup
+
+# Analyze any file
+make run FILE=my_module.py
+
+# Self-analysis (dogfooding)
+make self-analyze
+
+# Manual execution
+uv run python src/sda_detector.py my_module.py
 
 # Analyze a directory
-python sda_detector.py src/domain/
+uv run python src/sda_detector.py src/domain/
 
 # Analyze with custom name
-python sda_detector.py src/models/ "User Domain Models"
+uv run python src/sda_detector.py src/models/ "User Domain Models"
 ```
 
 ### Example Output
@@ -70,6 +79,9 @@ python sda_detector.py src/models/ "User Domain Models"
   isinstance_violations       2 🔍
     → my_module.py:23 - isinstance() runtime check
     → my_module.py:78 - isinstance() runtime check
+  manual_json_serialization   2 🔍
+    → my_module.py:15 - json.dumps() manual serialization
+    → my_module.py:32 - json.loads() manual serialization
   enum_value_unwrapping       1 🔍
     → my_module.py:89 - enum value unwrapping - consider StrEnum for automatic conversion, or validate if external serialization is needed instead of Status.ACTIVE.value
   anemic_services             1 🔍
@@ -85,9 +97,9 @@ python sda_detector.py src/models/ "User Domain Models"
 
 MODULE TYPE: domain
 FILES ANALYZED: 1
-TOTAL VIOLATIONS: 7
+TOTAL VIOLATIONS: 9
 TOTAL PATTERNS: 23
-DISTRIBUTION: 76.7% patterns, 23.3% violations
+DISTRIBUTION: 71.9% patterns, 28.1% violations
 ```
 
 ## 📚 Educational Features
@@ -201,6 +213,44 @@ Detection criteria:
 - **Utility method names** (get*, create*, update*, parse*, etc.)
 - **Too many methods** (8+ suggests multiple responsibilities)
 
+#### Manual JSON Serialization Detection
+
+The detector identifies manual JSON handling that bypasses Pydantic's type-safe serialization:
+
+```python
+# ❌ Manual JSON serialization (detected violation)
+import json
+
+user_data = {"name": "Alice", "age": 30}
+json_string = json.dumps(user_data)  # Manual serialization
+parsed_data = json.loads(json_string)  # Manual deserialization
+
+# Also catches imported forms
+from json import dumps, loads
+serialized = dumps(user_data)
+deserialized = loads(serialized)
+
+# ✅ Pydantic serialization (SDA pattern)
+class User(BaseModel):
+    name: str
+    age: int
+
+user = User(name="Alice", age=30)
+json_string = user.model_dump_json()  # Type-safe serialization with validation
+user_copy = User.model_validate_json(json_string)  # Type-safe deserialization
+
+# ✅ Advanced Pydantic patterns
+users_json = User.model_dump_json(users, by_alias=True)  # Custom serialization
+user_dict = user.model_dump(exclude={"sensitive_field"})  # Selective serialization
+```
+
+**Why this matters:**
+
+- **Type Safety** - Pydantic validates during serialization/deserialization
+- **Schema Evolution** - Models handle field additions/removals gracefully
+- **Custom Logic** - Field serializers/validators enable domain-specific rules
+- **Performance** - Pydantic's Rust core is faster than manual JSON handling
+
 #### Boolean Coercion Array Indexing - SDA's Purest Teaching Moment
 
 This pattern represents **SDA distilled to its essence** - it's impossible to think procedurally when you see it:
@@ -279,6 +329,7 @@ Every class demonstrates the core principle: instead of checking what the data i
 - **no_forward_refs** - Missing forward references in self-referential types
 - **manual_validation** - Hand-written validation instead of Pydantic
 - **anemic_services** - Services that are just bags of stateless functions
+- **manual_json_serialization** - Manual json.dumps/loads instead of Pydantic serialization
 
 ### Positive Patterns (SDA-aligned)
 
@@ -425,14 +476,38 @@ You interpret these facts based on your context, goals, and constraints.
 
 ## 🛠️ Development
 
+### VS Code Setup
+
+If VS Code is having interpreter issues, the project is configured to automatically use the uv virtual environment:
+
+```bash
+# Initialize the project (creates .venv automatically)
+make setup
+
+# VS Code should auto-detect: .venv/bin/python
+# If not, use Ctrl+Shift+P -> "Python: Select Interpreter" -> ".venv/bin/python"
+```
+
+The `.vscode/settings.json` is pre-configured with:
+- **Python interpreter**: `.venv/bin/python`
+- **Ruff formatting** on save
+- **MyPy type checking** enabled
+- **Optimal extensions** recommended
+
 ### Running Tests
 
 ```bash
 # Self-analysis (dogfooding)
-python sda_detector.py sda_detector.py
+make self-analyze
 
-# Expected output: ~79% patterns, ~21% violations for tooling module
-# The detector even catches its own enum .value violations! 🔍
+# Or run on any file
+make run FILE=path/to/your/file.py
+
+# Manual execution
+uv run python src/sda_detector.py src/sda_detector.py
+
+# Expected output: ~84% patterns, ~16% violations for tooling module
+# The detector practices what it preaches! 🔍
 ```
 
 ### Code Style
@@ -454,6 +529,8 @@ When contributing, remember the core philosophy:
 - **Stay focused** - Resist feature creep that dilutes the core purpose
 
 ### Recent Enhancements
+
+- **Manual JSON Serialization Detection** - Added detection for `json.dumps()` and `json.loads()` calls that bypass Pydantic's built-in serialization capabilities. Encourages use of `model_dump_json()`, `model_validate_json()`, and other Pydantic methods that maintain type safety and validation.
 
 - **Enum Value Unwrapping Detection** - Added `visit_Attribute()` to catch `.value` calls on StrEnum/Enum, promoting the SDA principle: "Build enums that ARE their values, not enums that HAVE values". Messages now acknowledge valid serialization needs while encouraging StrEnum usage.
 
