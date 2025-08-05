@@ -1,10 +1,10 @@
 # SDA Testing Philosophy: "Test the Domain Intelligence, Trust Pydantic for the Rest"
 
-## The F1 Car Principle
+## The Concentrated Intelligence Principle
 
-SDA has **sophisticated simplicity** - like a Formula 1 engine. Incredibly sophisticated engineering that produces elegant, predictable behavior.
+SDA achieves **sophisticated simplicity** through concentrated domain intelligence. Instead of scattering business logic across dozens of services, validators, and utilities, SDA concentrates it into rich domain models with clear behavioral boundaries.
 
-Traditional enterprise has **chaotic simplicity** - like duct-taping lawn mower engines together. Each piece looks simple, but the interactions are unpredictable hell.
+Traditional enterprise architecture creates **diffused complexity** - each piece looks simple in isolation, but the interactions between them create emergent complexity that's nearly impossible to reason about. You end up testing the glue code more than the business logic.
 
 **We'd rather debug one sophisticated model with clear rules than hunt through 15 "simple" classes where the business logic is playing hide-and-seek.**
 

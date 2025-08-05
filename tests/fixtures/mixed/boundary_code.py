@@ -18,7 +18,7 @@ class RedisClient:
         """Boundary code - legitimate try/except and hasattr usage"""
         try:
             # ✅ try/except legitimate for external system boundaries
-            import redis  # type: ignore
+            import redis
 
             self._connection = redis.Redis(host=self.host, port=self.port)
             self._connection.ping()
@@ -104,7 +104,7 @@ class ExternalApiClient:
     def make_request(self, endpoint: str, data: Any = None) -> dict:
         """Boundary method with legitimate type checking"""
         try:
-            import requests  # type: ignore
+            import requests
 
             headers = {"Authorization": f"Bearer {self.api_key}"}
             url = f"{self.base_url}/{endpoint}"

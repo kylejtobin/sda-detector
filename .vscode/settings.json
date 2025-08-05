@@ -14,13 +14,6 @@
     "editor.rulers": [120]
   },
 
-  // MyPy integration
-  "python.analysis.typeCheckingMode": "strict",
-  "python.analysis.autoImportCompletions": true,
-  "python.analysis.diagnosticMode": "workspace",
-  "python.analysis.completeFunctionParens": true,
-  "python.analysis.indexing": true,
-
   // General editor settings
   "editor.insertSpaces": true,
   "editor.tabSize": 4,
@@ -39,10 +32,16 @@
     "**/.coverage": true,
     "**/htmlcov": true
   },
+// Theme
+"workbench.colorTheme": "Default Dark Modern",
 
   // Testing
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": ["tests"],
-  "python.testing.autoTestDiscoverOnSaveEnabled": true
+"python.testing.autoTestDiscoverOnSaveEnabled": true,
+"cSpell.words": [
+    "Pydantic"
+],
+"makefile.configureOnOpen": false
 }

@@ -1,17 +1,19 @@
 # 🧠 SDA Detector
 
-**A Python AST analyzer that detects Semantic Domain Architecture patterns**
+**Transform your Python code from procedural checking to type-driven intelligence**
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Pydantic v2](https://img.shields.io/badge/pydantic-v2-E92063.svg)](https://docs.pydantic.dev/)
 [![Code style: SDA](https://img.shields.io/badge/code%20style-SDA-purple.svg)](https://github.com/kylejobin/sda-detector)
 [![License](https://img.shields.io/github/license/kylejtobin/sda-detector)](https://github.com/kylejobin/sda-detector/blob/main/LICENSE)
 
+> **"What if your data knew what to do with itself?"**
+
 ## 🎯 What is SDA Detector?
 
-SDA Detector is an **objective observer tool** that analyzes Python codebases for Semantic Domain Architecture (SDA) patterns. It tells you what architectural patterns exist in your code **without judging them** - you decide what to do with that information.
+SDA Detector analyzes Python codebases to identify Semantic Domain Architecture patterns - a paradigm where **data drives behavior** instead of conditional logic checking data. It's both a practical analysis tool and a living demonstration of these principles.
 
-The detector practices **eating your own dog food** - it demonstrates the very SDA principles it analyzes, making it both a practical tool and a learning resource.
+The detector doesn't prescribe or judge - it observes and reports. You get objective metrics about your code's architectural patterns, not opinions about whether they're "good" or "bad".
 
 ### Core Principle: Pure Observation
 
@@ -27,6 +29,20 @@ This tool practices the **observer pattern** - it reports facts, not opinions. I
 SDA is an architectural philosophy built on one core principle: **data drives behavior**.
 
 Instead of writing conditional logic that _checks_ data, you create types where data _selects_ behavior automatically. This fundamental shift transforms how you think about code:
+
+### From Procedural Checking to Type Intelligence
+
+```python
+# ❌ Traditional: Logic checks data
+if user.status == "active" and user.subscription_level == "premium":
+    if user.credits > 0:
+        process_premium_feature()
+
+# ✅ SDA: Data drives behavior
+user.subscription.process_feature()  # The type knows what to do
+```
+
+### Core Patterns That Eliminate Conditionals
 
 - **Pydantic models that encode domain rules** - Instead of `validate_email(string)`, create `Email(BaseModel)` that validates itself
 - **Enums with behavior instead of string literals** - Instead of `if status == "active"`, use `status.can_process_payment()`
@@ -541,10 +557,17 @@ When contributing, remember the core philosophy:
 
 [MIT License](LICENSE) – feel free to use this in your projects, educational materials, or as inspiration for your own architectural analysis tools.
 
-## 🎯 Conclusion
+## 🎯 Why SDA Detector Matters
 
-SDA Detector is more than just a code analyzer - it's an **educational artifact** that demonstrates advanced Python techniques while providing practical architectural insights.
+SDA Detector is more than just a code analyzer - it's a **living demonstration** of what happens when you push Python's type system to its limits.
 
-Whether you're learning about AST analysis, exploring type-driven development, or assessing your codebase's architectural patterns, this tool provides objective data to inform your decisions.
+### For Architecture Enthusiasts
+The detector shows that Python can achieve the same type-driven elegance typically associated with Haskell or Rust. Every conditional eliminated is a step toward code that's impossible to misuse.
 
-**The detector holds up a mirror to your code without fogging it with opinions.** 🪞✨
+### For Teams
+It provides objective metrics about your codebase's architectural patterns without prescriptive judgments. You decide what the patterns mean for your context.
+
+### For Learners
+The codebase itself is a masterclass in advanced Python techniques - AST manipulation, discriminated unions, behavioral enums, and type dispatch patterns that most Python developers never encounter.
+
+**The detector doesn't just analyze code for SDA patterns - it proves they work by using them itself.** 🪞✨
