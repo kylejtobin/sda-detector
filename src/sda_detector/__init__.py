@@ -1,6 +1,6 @@
 """SDA Detector - Strict Discriminated Architecture analysis tool.
 
-This package analyzes Python codebases to detect patterns that align 
+This package analyzes Python codebases to detect patterns that align
 with or violate Strict Discriminated Architecture principles.
 
 ## Public API
@@ -8,6 +8,7 @@ with or violate Strict Discriminated Architecture principles.
 ```python
 # Command-line usage
 from sda_detector import main
+
 main()  # Uses sys.argv
 
 # Programmatic usage
@@ -16,7 +17,7 @@ from sda_detector import analyze_module, print_report
 report = analyze_module("path/to/code", "module_name")
 print_report(report, "module_name")
 
-# Advanced usage with service
+# Advanced usage with service class
 from sda_detector.service import DetectionService
 
 service = DetectionService()

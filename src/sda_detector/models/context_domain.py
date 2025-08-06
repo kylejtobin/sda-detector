@@ -1,21 +1,49 @@
 """Rich Analysis Context - Accumulating Domain Intelligence During Code Traversal.
 
-This module demonstrates how SDA handles stateful analysis through immutable context models.
-Instead of global state or mutable trackers, we use immutable context that flows through
-the analysis pipeline, accumulating semantic understanding of code structure.
+PURPOSE:
+This module demonstrates how to handle stateful analysis in a functional way,
+using immutable context that flows through the analysis pipeline, accumulating
+semantic understanding without mutable state.
 
-Key SDA Concepts Demonstrated:
-- Immutable Context: State changes through model_copy(), never direct mutation
-- Computed Fields: Derived intelligence that updates automatically from base data
-- Scope Modeling: Rich domain types for different kinds of code scopes
-- Context Stacking: Track nested code structures (functions within classes, etc.)
-- Domain Intelligence: Models know their own semantic meaning and patterns
+SDA PRINCIPLES DEMONSTRATED:
+1. **Immutable Context Flow**: State changes via model_copy(), never mutation
+2. **Computed Intelligence**: Derived facts calculated from base data
+3. **Scope Stacking**: Tracking nested structures functionally
+4. **Pattern Detection by Name**: Inferring purpose from naming conventions
+5. **Multi-Indicator Logic**: Combining signals for classification
 
-Educational Focus:
-- Context flows through AST traversal, building understanding of code structure
-- Each scope (function, class, conditional) has semantic meaning for pattern detection
-- Immutable updates ensure thread safety and predictable behavior
-- Computed fields provide derived intelligence without manual state management
+LEARNING GOALS:
+- Understand immutable state management in tree traversal
+- Learn how context accumulates information without mutation
+- Master computed fields for derived intelligence
+- See how to infer code purpose from names and structure
+- Recognize the power of immutable data structures
+
+ARCHITECTURE NOTES:
+This is the most sophisticated state management in the codebase. It shows
+how to maintain context during recursive tree traversal without any mutable
+state. The context flows DOWN the tree (via parameters) and findings flow
+UP (via return values).
+
+Teaching Example:
+    >>> # Traditional mutable approach:
+    >>> class Analyzer:
+    >>>     def __init__(self):
+    >>>         self.current_class = None  # Mutable!
+    >>>         self.scope_stack = []  # Mutable!
+    >>>     
+    >>>     def enter_class(self, name):
+    >>>         self.current_class = name  # Mutation!
+    >>>         self.scope_stack.append(name)  # Mutation!
+    >>> 
+    >>> # SDA immutable approach:
+    >>> context = RichAnalysisContext(current_file="test.py", module_type=ModuleType.DOMAIN)
+    >>> new_context = context.enter_scope(class_scope)  # Returns NEW context
+    >>> # Original context unchanged - immutable!
+
+Key Insight:
+Immutability eliminates entire categories of bugs: race conditions, unexpected
+state changes, and action-at-a-distance. It makes code predictable and testable.
 """
 
 from enum import StrEnum
@@ -29,10 +57,25 @@ from .core_types import ModuleType
 class ScopeType(StrEnum):
     """Behavioral enum for different code scope types.
 
-    Each scope type has semantic meaning for SDA pattern detection.
-    Different scopes suggest different patterns and violation contexts.
-
-    SDA Principle: Enums know their own behavior instead of external logic.
+    WHAT: Represents different levels of code organization (module, class,
+    function, etc.) with semantic meaning for pattern detection.
+    
+    WHY: Different scope types have different architectural implications.
+    Classes define structure, functions define behavior, try blocks indicate
+    boundaries. This enum encodes that knowledge.
+    
+    HOW: Each scope type has properties that reveal its architectural
+    significance, enabling context-aware analysis.
+    
+    Teaching Example:
+        >>> scope = ScopeType.CLASS
+        >>> print(scope.analysis_priority)  # 1 - highest priority
+        >>> print(scope.creates_naming_scope)  # True - classes create namespaces
+        >>> print(scope.suggests_business_logic)  # True - classes often have logic
+    
+    SDA Pattern Demonstrated:
+        Smart Enums - The enum knows architectural implications of each
+        scope type, eliminating external classification logic.
     """
 
     MODULE = "module"
@@ -43,7 +86,15 @@ class ScopeType(StrEnum):
 
     @property
     def analysis_priority(self) -> int:
-        """Domain intelligence: analysis priority for different scope types."""
+        """Domain intelligence: analysis priority for different scope types.
+        
+        Teaching: Priority encodes architectural importance:
+        1. CLASS - Defines structure, most important
+        2. FUNCTION - Defines behavior, very important
+        3. CONDITIONAL - Control flow, important
+        4. TRY_BLOCK - Error handling, moderate
+        5. MODULE - File level, least specific
+        """
         priorities = {
             ScopeType.CLASS: 1,  # Highest - structural architecture
             ScopeType.FUNCTION: 2,  # High - behavior boundaries
@@ -55,7 +106,11 @@ class ScopeType(StrEnum):
 
     @property
     def creates_naming_scope(self) -> bool:
-        """Does this scope type create a new naming/variable scope?"""
+        """Does this scope type create a new naming/variable scope?
+        
+        Teaching: In Python, only modules, classes, and functions create
+        new namespaces. Conditionals and try blocks don't!
+        """
         return self in {ScopeType.CLASS, ScopeType.FUNCTION, ScopeType.MODULE}
 
     @property
@@ -72,10 +127,29 @@ class ScopeType(StrEnum):
 class AnalysisScope(BaseModel):
     """Individual scope in the analysis context stack.
 
-    Represents a single level of code nesting (function, class, etc.) with
-    semantic intelligence about what patterns and violations are likely within.
-
-    SDA Principle: Rich domain models that understand their own meaning.
+    WHAT: Represents one level of code nesting (a class, function, or block)
+    with intelligence about what patterns are likely within it.
+    
+    WHY: Code behavior often depends on context. A conditional in a validation
+    function is different from one in business logic. This model captures that.
+    
+    HOW: Combines scope type with name analysis to infer purpose, using
+    computed fields to derive semantic meaning.
+    
+    Teaching Example:
+        >>> # A validation function scope:
+        >>> scope = AnalysisScope(
+        >>>     scope_type=ScopeType.FUNCTION,
+        >>>     name="validate_order",
+        >>>     line_number=42
+        >>> )
+        >>> print(scope.is_validation_scope)  # True - name contains 'validate'
+        >>> print(scope.is_boundary_scope)  # False - validation isn't boundary
+        >>> print(scope.likely_contains_business_logic)  # False - it's validation
+    
+    SDA Pattern Demonstrated:
+        Name-Based Intelligence - Inferring code purpose from naming
+        conventions. This is heuristic but surprisingly effective.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -93,7 +167,15 @@ class AnalysisScope(BaseModel):
     @computed_field
     @property
     def is_serialization_scope(self) -> bool:
-        """Domain intelligence: does scope name suggest serialization activity?"""
+        """Domain intelligence: does scope name suggest serialization activity?
+        
+        Teaching Note: PATTERN DETECTION BY NAMING CONVENTION
+        
+        This shows acceptable use of 'any()' with generator expression.
+        We're checking if ANY pattern matches - this is data operation,
+        not business logic. The patterns list encodes domain knowledge
+        about common serialization naming conventions.
+        """
         serialization_patterns = ["json", "dump", "serialize", "export", "save"]
         return any(pattern in self.name.lower() for pattern in serialization_patterns)
 
@@ -107,35 +189,72 @@ class AnalysisScope(BaseModel):
     @computed_field
     @property
     def is_boundary_scope(self) -> bool:
-        """Domain intelligence: does scope suggest infrastructure/boundary code?"""
-        # Type-level boundary detection (try blocks handle errors at boundaries)
+        """Domain intelligence: does scope suggest infrastructure/boundary code?
+        
+        Teaching Note: MULTI-SIGNAL CLASSIFICATION
+        
+        This combines two signals:
+        1. Type-based: Try blocks suggest boundary (error handling)
+        2. Name-based: Certain names suggest adapters/connectors
+        
+        The 'if' here is acceptable - it's combining signals, not
+        making business decisions. Early return for efficiency.
+        """
+        # Teaching: Type-level boundary detection
         if self.scope_type.suggests_infrastructure:
             return True
 
-        # Name-based boundary detection
+        # Teaching: Name-based boundary detection
         boundary_patterns = ["client", "adapter", "wrapper", "handler", "connector"]
         return any(pattern in self.name.lower() for pattern in boundary_patterns)
 
     @computed_field
     @property
     def likely_contains_business_logic(self) -> bool:
-        """Domain intelligence: does this scope likely contain business logic?"""
+        """Domain intelligence: does this scope likely contain business logic?
+        
+        Teaching: Business logic is what's LEFT after excluding:
+        - Boundary/infrastructure code
+        - Validation code
+        This is process of elimination - elegant!
+        """
         return self.scope_type.suggests_business_logic and not self.is_boundary_scope and not self.is_validation_scope
 
 
 class RichAnalysisContext(BaseModel):
     """Immutable analysis context that flows through AST traversal.
 
-    This is the core of SDA's stateful analysis approach. Instead of global variables
-    or mutable state, we pass immutable context through the analysis pipeline.
-    The context accumulates semantic understanding of code structure and provides
-    rich intelligence about the current analysis location.
-
+    WHAT: An immutable data structure that accumulates context during
+    code analysis, providing rich information about the current location.
+    
+    WHY: Mutable state during tree traversal is error-prone. Race conditions,
+    unexpected mutations, and debugging nightmares. Immutable context eliminates
+    these problems while providing rich analysis capabilities.
+    
+    HOW: Uses Pydantic's model_copy() for immutable updates, computed fields
+    for derived intelligence, and scope stacking for nested contexts.
+    
+    Teaching Example:
+        >>> # Start with file context:
+        >>> ctx = RichAnalysisContext.for_file("order.py", ModuleType.DOMAIN)
+        >>> 
+        >>> # Enter a class (immutably):
+        >>> class_scope = AnalysisScope(ScopeType.CLASS, "Order", 10)
+        >>> ctx2 = ctx.enter_scope(class_scope)  # NEW context
+        >>> print(ctx.current_class_name)  # "" - original unchanged!
+        >>> print(ctx2.current_class_name)  # "Order" - new context
+        >>> 
+        >>> # Enter a method (immutably):
+        >>> method_scope = AnalysisScope(ScopeType.FUNCTION, "calculate_total", 20)
+        >>> ctx3 = ctx2.enter_scope(method_scope)
+        >>> print(ctx3.nesting_level)  # 2 - class + function
+        >>> print(ctx3.in_business_logic_context)  # True - likely business logic
+    
     SDA Principles Demonstrated:
-    - Immutability: All state changes via model_copy(), never direct mutation
-    - Rich Context: Far beyond simple "current file" - semantic understanding
-    - Computed Intelligence: Derived facts computed automatically from base data
-    - Type Safety: All context information is properly typed and validated
+        - Immutability: All state changes via model_copy(), never mutation
+        - Rich Context: Semantic understanding beyond "current file"
+        - Computed Intelligence: Derived facts from base data
+        - Type Safety: Everything properly typed and validated
     """
 
     model_config = ConfigDict(frozen=True)
@@ -168,7 +287,11 @@ class RichAnalysisContext(BaseModel):
     @computed_field
     @property
     def current_scope(self) -> AnalysisScope | None:
-        """The innermost scope we're currently analyzing."""
+        """The innermost scope we're currently analyzing.
+        
+        Teaching: Safe list access - returns None if stack empty.
+        The [-1] index gets the last (most recent) scope.
+        """
         return self.scope_stack[-1] if self.scope_stack else None
 
     @computed_field
@@ -180,7 +303,11 @@ class RichAnalysisContext(BaseModel):
     @computed_field
     @property
     def in_serialization_context(self) -> bool:
-        """Domain intelligence: are we in serialization-related code?"""
+        """Domain intelligence: are we in serialization-related code?
+        
+        Teaching: Bubbling up properties - if ANY scope in the stack
+        is serialization-related, we're in serialization context.
+        """
         return any(scope.is_serialization_scope for scope in self.scope_stack)
 
     @computed_field
@@ -192,8 +319,19 @@ class RichAnalysisContext(BaseModel):
     @computed_field
     @property
     def in_boundary_context(self) -> bool:
-        """Domain intelligence: are we in infrastructure/boundary code?"""
-        # Multiple indicators can suggest boundary context
+        """Domain intelligence: are we in infrastructure/boundary code?
+        
+        Teaching Note: COMBINING MULTIPLE SIGNALS
+        
+        This shows sophisticated classification using three signals:
+        1. File name patterns (client.py, adapter.py)
+        2. Scope analysis (any scope suggests boundary?)
+        3. Module type (infrastructure/framework modules)
+        
+        Using 'or' to combine - if ANY signal says boundary, it is.
+        This is conservative - better to over-identify boundaries.
+        """
+        # Teaching: Multiple indicators for robust classification
         file_suggests_boundary = self._file_suggests_boundary()
         scope_suggests_boundary = any(scope.is_boundary_scope for scope in self.scope_stack)
         module_suggests_boundary = self.module_type in {ModuleType.INFRASTRUCTURE, ModuleType.FRAMEWORK}
@@ -215,7 +353,15 @@ class RichAnalysisContext(BaseModel):
     @computed_field
     @property
     def current_function_name(self) -> str:
-        """Name of current function scope, empty string if not in function."""
+        """Name of current function scope, empty string if not in function.
+        
+        Teaching: List comprehension + conditional expression pattern.
+        1. Filter scopes to find functions
+        2. Take the last one (innermost)
+        3. Return name or empty string
+        
+        This avoids exceptions and None - always returns a string.
+        """
         function_scopes = [s for s in self.scope_stack if s.scope_type == ScopeType.FUNCTION]
         return function_scopes[-1].name if function_scopes else ""
 
@@ -227,7 +373,11 @@ class RichAnalysisContext(BaseModel):
         return class_scopes[-1].name if class_scopes else ""
 
     def _file_suggests_boundary(self) -> bool:
-        """Helper: does the filename suggest boundary/infrastructure code?"""
+        """Helper: does the filename suggest boundary/infrastructure code?
+        
+        Teaching: Private method for internal logic. The underscore
+        signals this is not part of the public API.
+        """
         file_path = Path(self.current_file)
         boundary_patterns = ["client", "adapter", "wrapper", "config", "settings"]
         return any(pattern in file_path.name.lower() for pattern in boundary_patterns)
@@ -235,6 +385,16 @@ class RichAnalysisContext(BaseModel):
     def enter_scope(self, scope: AnalysisScope) -> "RichAnalysisContext":
         """Enter a new scope, returning updated immutable context.
 
+        Teaching Note: IMMUTABLE STATE TRANSITION
+        
+        This is the key pattern for immutable updates:
+        1. Create new data ([*self.scope_stack, scope] spreads + appends)
+        2. Use model_copy() with update dict
+        3. Return NEW context (original unchanged)
+        
+        The [*list, item] syntax is Python's spread operator - creates
+        a new list with existing items plus the new one.
+        
         Args:
             scope: New scope to enter (function, class, conditional, etc.)
 
@@ -249,6 +409,15 @@ class RichAnalysisContext(BaseModel):
     def exit_scope(self) -> "RichAnalysisContext":
         """Exit current scope, returning updated immutable context.
 
+        Teaching Note: SAFE SCOPE POPPING
+        
+        Two important patterns here:
+        1. Guard clause - if stack empty, return self (no change)
+        2. List slicing [:-1] removes last element immutably
+        
+        This can't fail - either we have scopes to pop or we don't.
+        No exceptions, no mutations, completely safe.
+        
         Returns:
             New context with top scope removed, or same context if stack empty
 

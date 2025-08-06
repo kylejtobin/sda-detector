@@ -1,10 +1,46 @@
-"""Core domain types for SDA architecture detection.
+"""Core domain types for SDA architecture detection - The Foundation of Type-Driven Development.
 
-These types define the fundamental vocabulary of SDA analysis:
-what modules we analyze, what violations we detect, and what
-positive patterns we recognize.
+PURPOSE:
+This module defines the fundamental vocabulary of Semantic Domain Architecture (SDA) analysis.
+It demonstrates how to eliminate conditionals by encoding business logic into the type system itself.
 
-These are the building blocks that other domain models reference.
+SDA PRINCIPLES DEMONSTRATED:
+1. **Discriminated Union Dispatch**: Every enum replaces if/elif chains with pure type dispatch
+2. **Behavioral Enums**: Enums contain methods that encode their own logic
+3. **No Naked Primitives**: Every string/int is wrapped in a semantic type
+4. **Immutable Intelligence**: All types are immutable with computed behaviors
+5. **Zero Runtime Reflection**: No isinstance/hasattr/getattr in business logic
+
+LEARNING GOALS:
+- Understand how discriminated unions eliminate conditionals
+- Learn to encode business logic in types, not procedures
+- Master behavioral enum patterns that self-organize code
+- See how proper type design prevents entire bug categories
+- Recognize the difference between boundary code and domain logic
+
+ARCHITECTURE NOTES:
+This is the foundation layer - all other domain models build on these types.
+Every enum here replaces what would traditionally be if/elif chains scattered
+throughout the codebase. By centralizing dispatch logic in behavioral enums,
+we achieve "software by subtraction" - less code, more capability.
+
+Teaching Example:
+    >>> # Traditional approach (what we're replacing):
+    >>> if isinstance(node, ast.FunctionDef):
+    >>>     handle_function(node)
+    >>> elif isinstance(node, ast.ClassDef):
+    >>>     handle_class(node)
+    >>> elif isinstance(node, ast.If):
+    >>>     handle_conditional(node)
+    >>> 
+    >>> # SDA approach (what we do instead):
+    >>> node_type = ASTNodeType.from_ast(node)  # Pure classification
+    >>> findings = node_type.create_analyzer_findings(node, context)  # Behavioral dispatch
+
+Key Insight:
+Every enum in this file is a mini-expert system that knows everything about
+its domain. This is the opposite of anemic models - our types are rich with
+behavior, eliminating the need for external service logic.
 """
 
 import ast
@@ -19,7 +55,33 @@ if TYPE_CHECKING:
 
 
 class ASTNodeCategory(StrEnum):
-    """Domain classification of AST nodes by semantic meaning."""
+    """Domain classification of AST nodes by semantic meaning.
+    
+    WHAT: Groups AST nodes into categories based on their role in code structure.
+    Each category represents a different aspect of program organization.
+    
+    WHY: Different node categories require different analysis strategies.
+    Structural nodes define architecture, behavioral nodes show usage patterns,
+    control flow nodes reveal logic patterns, and data nodes show state access.
+    
+    HOW: This demonstrates SDA's "behavioral enum" pattern - the enum itself
+    contains methods that encode domain knowledge about each category.
+    
+    Teaching Example:
+        >>> # Instead of scattered conditionals:
+        >>> if node_type in ['class', 'function', 'module']:
+        >>>     priority = 1
+        >>> elif node_type in ['if', 'try', 'for']:
+        >>>     priority = 2
+        >>> 
+        >>> # We encode this knowledge in the type:
+        >>> category = ASTNodeCategory.STRUCTURAL
+        >>> priority = category.analysis_priority  # Type knows its own priority
+    
+    SDA Pattern Demonstrated:
+        Behavioral Enums - The enum encapsulates all knowledge about node categories,
+        eliminating the need for external classification logic.
+    """
 
     STRUCTURAL = "structural"  # Classes, functions, modules
     BEHAVIORAL = "behavioral"  # Calls, attribute access
@@ -28,7 +90,16 @@ class ASTNodeCategory(StrEnum):
 
     @property
     def analysis_priority(self) -> int:
-        """Domain intelligence: analysis priority by semantic importance."""
+        """Domain intelligence: analysis priority by semantic importance.
+        
+        Teaching Note:
+            This property demonstrates "intelligence in types". Instead of having
+            a service method like get_priority(category), the category knows its
+            own priority. This is fundamental SDA - data and behavior together.
+            
+            Notice the pure dictionary dispatch - no if/elif chains. The dictionary
+            is a compile-time constant, making this both fast and maintainable.
+        """
         priorities = {
             ASTNodeCategory.STRUCTURAL: 1,  # High priority - architecture
             ASTNodeCategory.CONTROL_FLOW: 2,  # Medium priority - patterns
@@ -39,30 +110,72 @@ class ASTNodeCategory(StrEnum):
 
     @property
     def creates_scope(self) -> bool:
-        """Does this category introduce a new naming scope?"""
+        """Does this category introduce a new naming scope?
+        
+        Teaching: Simple boolean properties encode domain knowledge directly
+        in the type, eliminating the need for external scope-checking logic.
+        """
         return self == self.STRUCTURAL
 
     @property
     def needs_flow_analysis(self) -> bool:
-        """Does this category affect program flow?"""
+        """Does this category affect program flow?
+        
+        Teaching: Set membership is still pure functional programming -
+        it's a boolean operation, not a conditional statement.
+        """
         return self in {self.CONTROL_FLOW, self.BEHAVIORAL}
 
     @property
     def can_contain_patterns(self) -> bool:
-        """Can this category contain SDA violations?"""
+        """Can this category contain SDA violations?
+        
+        Teaching: Domain knowledge encoded as computed properties means
+        the type system itself understands which nodes to analyze.
+        """
         # Data nodes rarely contain patterns we care about
         return self != self.DATA
 
 
 class ASTNodeType(StrEnum):
-    """Discriminated union for AST node classification - eliminates isinstance chains.
+    """Discriminated union for AST node classification - The Heart of SDA Pattern Detection.
 
-    This enum replaces all isinstance(node, ast.SomeType) checks with pure
-    discriminated union dispatch. Each node type knows its own behavior and
-    capabilities through behavioral methods.
-
-    CRITICAL: This eliminates SDA violations by encoding AST intelligence
-    into the type system rather than procedural isinstance checks.
+    WHAT: A discriminated union (tagged union) that classifies Python AST nodes
+    into semantic categories. Each value represents a different type of code construct.
+    
+    WHY: Python's ast module requires isinstance() checks to identify node types,
+    which violates SDA principles. This enum wraps that boundary operation once,
+    then provides pure type-driven dispatch throughout the rest of the system.
+    
+    HOW: The from_ast() factory method performs the boundary isinstance checks
+    (marked and isolated), then all subsequent operations use pure dispatch
+    through behavioral methods on the enum itself.
+    
+    Teaching Example:
+        >>> # What NOT to do (scattered throughout codebase):
+        >>> def analyze(node):
+        >>>     if isinstance(node, ast.FunctionDef):
+        >>>         return analyze_function(node)
+        >>>     elif isinstance(node, ast.ClassDef):
+        >>>         return analyze_class(node)
+        >>>     elif isinstance(node, ast.If):
+        >>>         return analyze_conditional(node)
+        >>> 
+        >>> # What we do instead (SDA pattern):
+        >>> def analyze(node):
+        >>>     node_type = ASTNodeType.from_ast(node)  # Single boundary conversion
+        >>>     return node_type.create_analyzer_findings(node, context)  # Pure dispatch
+    
+    SDA Pattern Demonstrated:
+        Discriminated Union Dispatch - We convert untyped external data (AST nodes)
+        into a strongly-typed discriminated union once at the boundary, then use
+        pure type dispatch for all logic. This eliminates hundreds of isinstance
+        calls throughout the codebase.
+        
+    Architecture Note:
+        This is a "boundary pattern" - it sits at the edge between Python's
+        dynamic AST and our type-safe domain. All isinstance operations are
+        contained here, marked with comments, and never leak into domain logic.
     """
 
     FUNCTION_DEF = "function_def"
@@ -77,8 +190,25 @@ class ASTNodeType(StrEnum):
     def from_ast(cls, node: ast.AST) -> "ASTNodeType":
         """Pure discriminated union classification - replaces isinstance chains.
 
-        This method eliminates ALL isinstance usage by encoding node type
-        intelligence into discriminated union dispatch.
+        Teaching Note: THE BOUNDARY PATTERN IN ACTION
+        
+        This is the ONLY place we use type() to check AST node types. This is a
+        "boundary method" - it converts untyped external data (Python AST) into
+        our strongly-typed domain model. Notice:
+        
+        1. We use type() not isinstance() for exact type matching
+        2. We use a dictionary for O(1) lookup instead of if/elif chains  
+        3. We provide a sensible default (UNKNOWN) for unrecognized nodes
+        4. This is a @classmethod factory - a common pattern for type conversion
+        
+        After this conversion, the rest of the codebase NEVER needs isinstance.
+        This is "software by subtraction" - one boundary method eliminates
+        hundreds of conditionals throughout the system.
+        
+        Implementation Note:
+            Using type() instead of isinstance() is intentional - we want exact
+            matches, not inheritance checks. This makes our classification
+            deterministic and prevents subtle bugs from subclass handling.
         """
         node_classifiers = {
             ast.FunctionDef: ASTNodeType.FUNCTION_DEF,
@@ -92,7 +222,22 @@ class ASTNodeType(StrEnum):
         return node_classifiers.get(type(node), ASTNodeType.UNKNOWN)
 
     def creates_scope(self) -> bool:
-        """Behavioral method - node types know if they create analysis scopes."""
+        """Behavioral method - node types know if they create analysis scopes.
+        
+        Teaching Note: BEHAVIORAL ENUMS IN ACTION
+        
+        Instead of having external code that checks:
+            if node_type in ['function', 'class', 'conditional']:
+                create_scope()
+                
+        The enum itself knows this! This is "intelligence in types" - the type
+        system carries semantic knowledge that would otherwise be scattered
+        across service methods.
+        
+        Notice the set membership test - this is still pure and functional,
+        just expressed as a boolean operation rather than a dictionary lookup.
+        Both patterns are valid SDA as long as they're pure and deterministic.
+        """
         scope_creators = {ASTNodeType.FUNCTION_DEF, ASTNodeType.CLASS_DEF, ASTNodeType.CONDITIONAL, ASTNodeType.MATCH_CASE}
         return self in scope_creators
 
@@ -101,8 +246,25 @@ class ASTNodeType(StrEnum):
     ) -> None:
         """Process node with proper scope handling using pure discriminated union dispatch.
 
-        This eliminates if/else conditionals in service.py by encoding the scope
-        handling logic into the type system itself.
+        Teaching Note: ADVANCED BEHAVIORAL DISPATCH
+        
+        This method is a masterclass in SDA principles. It demonstrates:
+        
+        1. **Type-Driven Behavior**: The enum value determines processing strategy
+        2. **Pure Dictionary Dispatch**: No if/elif chains, just data lookup
+        3. **Delegation Pattern**: Complex logic delegated to private methods
+        4. **Inversion of Control**: The type controls the flow, not the caller
+        
+        Traditional approach would have this logic in service.py:
+            if creates_scope(node):
+                push_scope()
+                process_children()
+                pop_scope()
+            else:
+                process_children()
+                
+        SDA approach: The type itself orchestrates the entire flow!
+        This is "Tell, Don't Ask" taken to its logical conclusion.
         """
         # Pure dictionary dispatch for scope handling behavior
         scope_processors = {
@@ -152,8 +314,29 @@ class ASTNodeType(StrEnum):
     def create_analyzer_findings(self, node: ast.AST, context: "RichAnalysisContext") -> list["Finding"]:
         """Behavioral method - node types know how to analyze themselves.
 
-        Pure discriminated union dispatch - NO CONDITIONALS.
-        The discriminated union guarantees node types match analyzer expectations.
+        Teaching Note: THE ULTIMATE SDA PATTERN - SELF-ANALYZING TYPES
+        
+        This method embodies the pinnacle of SDA design. Instead of:
+        1. Service asks "what type are you?"
+        2. Service decides which analyzer to use
+        3. Service calls the analyzer
+        
+        We have:
+        1. Service tells type "analyze yourself"
+        2. Type knows exactly how to do that
+        
+        The dictionary maps enum values to lambda functions that lazily import
+        and call the appropriate analyzer. This demonstrates:
+        
+        - **Lazy Imports**: Analyzers only imported when needed
+        - **Pure Dispatch**: No conditionals, just dictionary lookup
+        - **Type Safety**: Each analyzer knows what node type it handles
+        - **Encapsulation**: Calling code doesn't need to know about analyzers
+        
+        Critical Insight:
+            The lambda functions provide lazy evaluation - analyzers are only
+            imported when actually needed. This improves startup time and makes
+            the dispatch table a compile-time constant.
         """
         from collections.abc import Callable
 
@@ -162,8 +345,10 @@ class ASTNodeType(StrEnum):
         from .analyzers.call_analyzer import CallAnalyzer
         from .analyzers.conditional_analyzer import ConditionalAnalyzer
 
-        # Pure discriminated union dispatch - trust the classification
-        # The from_ast() method GUARANTEES the node type
+        # Teaching: Pure discriminated union dispatch - trust the classification
+        # The from_ast() method GUARANTEES the node type matches what we expect.
+        # This is why we can safely pass any node to any analyzer - the type
+        # system ensures we only get nodes we can handle
         analyzer_dispatch: dict[ASTNodeType, Callable[[], list[Finding]]] = {
             ASTNodeType.CONDITIONAL: lambda: ConditionalAnalyzer.analyze_node(node, context),
             ASTNodeType.MATCH_CASE: lambda: ConditionalAnalyzer.analyze_node(node, context),  # Match/case is a conditional pattern
@@ -180,7 +365,12 @@ class ASTNodeType(StrEnum):
         return []
 
     def _create_function_scope(self, node: ast.AST) -> "AnalysisScope":
-        """Create function scope using discriminated union pattern."""
+        """Create function scope using discriminated union pattern.
+        
+        Teaching: Notice the getattr() calls here - these are BOUNDARY operations.
+        We're extracting data from an external system (Python AST). This is acceptable
+        at boundaries but would be a violation in domain logic.
+        """
         from .context_domain import AnalysisScope, ScopeType
 
         return AnalysisScope(
@@ -190,7 +380,12 @@ class ASTNodeType(StrEnum):
         )
 
     def _create_class_scope(self, node: ast.AST) -> "AnalysisScope":
-        """Create class scope using discriminated union pattern."""
+        """Create class scope using discriminated union pattern.
+        
+        Teaching: The getattr() with defaults ('unknown_class', 0) is defensive
+        programming at the boundary - we don't trust external data but convert
+        it to safe domain values immediately.
+        """
         from .context_domain import AnalysisScope, ScopeType
 
         return AnalysisScope(
@@ -200,7 +395,11 @@ class ASTNodeType(StrEnum):
         )
 
     def _create_conditional_scope(self, node: ast.AST) -> "AnalysisScope":
-        """Create conditional scope using discriminated union pattern."""
+        """Create conditional scope using discriminated union pattern.
+        
+        Teaching: ScopeNaming.CONDITIONAL is another enum - we never use
+        raw strings in domain logic. Every string becomes a typed constant.
+        """
         from .context_domain import AnalysisScope, ScopeType
 
         return AnalysisScope(
@@ -244,14 +443,38 @@ class ASTNodeType(StrEnum):
 
 
 class FileResult(StrEnum):
-    """Discriminated union for file operation results - eliminates try/except control flow.
+    """Discriminated union for file operation results - Replacing Exceptions with Types.
 
-    This enum replaces try/except blocks used for control flow with pure
-    discriminated union dispatch. Each result type knows how to handle itself
-    through behavioral methods.
-
-    CRITICAL: This eliminates SDA violations by encoding error handling
-    intelligence into the type system rather than procedural try/except.
+    WHAT: Represents the result of file operations as a type rather than using
+    exceptions for control flow. Similar to Result<T, E> in Rust or Either in Haskell.
+    
+    WHY: Using exceptions for control flow is a procedural pattern that makes
+    code paths implicit and hard to follow. By encoding success/failure as types,
+    we make all code paths explicit and composable.
+    
+    HOW: Instead of try/except blocks, operations return a FileResult that
+    encodes success or failure. The result type has methods to handle each case.
+    
+    Teaching Example:
+        >>> # Traditional approach (hidden control flow):
+        >>> try:
+        >>>     content = read_file(path)
+        >>>     findings = analyze(content)
+        >>> except IOError:
+        >>>     findings = [error_finding()]
+        >>> 
+        >>> # SDA approach (explicit control flow):
+        >>> result = read_file_safe(path)  # Returns FileResult
+        >>> findings = result.to_findings(path, content)  # Type handles both cases
+    
+    SDA Pattern Demonstrated:
+        Result Types - Encoding success/failure in the type system makes error
+        handling explicit, composable, and impossible to forget. This pattern
+        eliminates entire categories of uncaught exception bugs.
+        
+    Philosophy Note:
+        This is "errors as values" - a functional programming principle that
+        makes error handling a first-class concern rather than an afterthought.
     """
 
     SUCCESS = "success"
@@ -260,7 +483,18 @@ class FileResult(StrEnum):
     def to_findings(self, file_path: str, content: str = "") -> list["Finding"]:
         """Behavioral method - results know how to convert themselves to findings.
 
-        Pure discriminated union dispatch without conditionals or try/except.
+        Teaching Note: PURE ERROR HANDLING
+        
+        This method shows how to handle errors without exceptions:
+        1. Success returns an empty list (no findings = no problems)
+        2. Error creates an error finding
+        
+        The dictionary dispatch makes both paths explicit and ensures
+        we handle all cases. No forgotten error handling!
+        
+        Implementation Detail:
+            The content parameter is unused here but could be used for
+            more sophisticated error reporting in the future.
         """
         from .analysis_domain import Finding
 
@@ -283,10 +517,25 @@ class FileResult(StrEnum):
 
 
 class AnalysisResult(StrEnum):
-    """Discriminated union for AST parsing results - eliminates try/except control flow.
+    """Discriminated union for AST parsing results - Type-Safe AST Analysis.
 
-    This enum replaces try/except blocks for AST parsing with pure
-    discriminated union dispatch. Each result type knows its own behavior.
+    WHAT: Represents the result of AST parsing operations as explicit types
+    rather than relying on exception handling.
+    
+    WHY: AST parsing can fail for various reasons (syntax errors, encoding issues).
+    Instead of scattering try/except blocks, we centralize error handling logic.
+    
+    HOW: Parse operations return AnalysisResult.SUCCESS or PARSE_ERROR,
+    with methods to convert results to appropriate findings.
+    
+    Teaching Note:
+        This is the same pattern as FileResult but for AST operations.
+        Consistency in error handling patterns makes code predictable.
+    
+    SDA Pattern Demonstrated:
+        Consistent Error Types - Using the same pattern (Result types) for
+        all fallible operations creates a uniform error handling strategy
+        across the entire codebase.
     """
 
     SUCCESS = "success"
@@ -311,9 +560,42 @@ class AnalysisResult(StrEnum):
 
 
 class PathType(StrEnum):
-    """Discriminated union for file system path handling.
+    """Discriminated union for file system path handling - Making File Systems Type-Safe.
 
-    Eliminates if/elif chains for path type checking using pure behavioral dispatch.
+    WHAT: Classifies file system paths into semantic categories (Python files,
+    directories, other) to enable type-driven file processing.
+    
+    WHY: File system operations often involve complex if/elif chains checking
+    extensions, whether something is a file or directory, etc. This type
+    encapsulates all that logic in one place.
+    
+    HOW: The from_path() factory method classifies paths, then behavioral
+    methods like get_python_files() operate based on the classification.
+    
+    Teaching Example:
+        >>> # Traditional approach (scattered logic):
+        >>> if os.path.isfile(path):
+        >>>     if path.endswith('.py'):
+        >>>         files = [path]
+        >>>     else:
+        >>>         files = []
+        >>> elif os.path.isdir(path):
+        >>>     files = glob.glob(os.path.join(path, '*.py'))
+        >>> else:
+        >>>     files = []
+        >>> 
+        >>> # SDA approach (centralized intelligence):
+        >>> path_type = PathType.from_path(path)
+        >>> files = path_type.get_python_files(path)
+    
+    SDA Pattern Demonstrated:
+        Smart Enums - The enum encapsulates all file system classification logic,
+        making it reusable and testable. This is "intelligence in types" - the
+        type system understands the domain.
+        
+    Implementation Note:
+        The nested dispatch pattern (True/False -> classifier methods) shows
+        how to handle multi-level decisions without nested conditionals.
     """
 
     PYTHON_FILE = "python_file"
@@ -360,9 +642,44 @@ class PathType(StrEnum):
 
 
 class FindingClassifier(StrEnum):
-    """Discriminated union for finding classification.
+    """Discriminated union for finding classification - Organizing Analysis Results.
 
-    Eliminates if/elif chains for finding categorization using pure behavioral dispatch.
+    WHAT: Classifies analysis findings into violations, positive patterns, or unknown
+    based on their properties, enabling type-driven report generation.
+    
+    WHY: Findings need to be organized into different collections for reporting.
+    Instead of scattered if/else logic checking properties, this type centralizes
+    the classification and collection logic.
+    
+    HOW: Uses boolean tuple indexing - a powerful pattern for multi-condition
+    dispatch without conditionals. The from_finding() method creates a tuple
+    of booleans, then uses it as a dictionary key.
+    
+    Teaching Example:
+        >>> # Traditional approach (nested conditionals):
+        >>> if finding.pattern_category:
+        >>>     if finding.pattern_type:
+        >>>         violations.append(finding)  # Has both
+        >>>     else:
+        >>>         violations.append(finding)  # Just violation
+        >>> elif finding.pattern_type:
+        >>>     patterns.append(finding)  # Just pattern
+        >>> else:
+        >>>     pass  # Unknown, ignore
+        >>> 
+        >>> # SDA approach (pure dispatch):
+        >>> classifier = FindingClassifier.from_finding(finding)
+        >>> classifier.add_to_collections(finding, violations, patterns)
+    
+    SDA Pattern Demonstrated:
+        Boolean Tuple Dispatch - Using tuples of booleans as dictionary keys
+        enables complex multi-condition logic without any conditionals. This
+        pattern scales to any number of conditions while remaining pure.
+        
+    Advanced Technique:
+        The (has_violation, has_pattern) tuple creates 4 possible states,
+        all handled explicitly in the classification_map. This exhaustive
+        handling prevents bugs from unhandled edge cases.
     """
 
     VIOLATION = "violation"
@@ -371,12 +688,31 @@ class FindingClassifier(StrEnum):
 
     @classmethod
     def from_finding(cls, finding: "Finding") -> "FindingClassifier":
-        """Classify finding type using discriminated union dispatch."""
-        # Pure boolean coercion array indexing - no conditionals
+        """Classify finding type using discriminated union dispatch.
+        
+        Teaching Note: BOOLEAN TUPLE DISPATCH MASTERY
+        
+        This is an advanced SDA pattern that eliminates complex nested conditionals:
+        
+        1. Convert conditions to booleans (has_violation, has_pattern)
+        2. Create a tuple from the booleans - this becomes our "key"
+        3. Map ALL possible combinations (2^n for n booleans)
+        4. Look up the result - O(1) operation!
+        
+        With 2 booleans we have 4 cases. With 3 booleans we'd have 8 cases.
+        This scales better than nested if/elif because:
+        - All cases are visible in one place
+        - Impossible to miss a case (dict would KeyError)
+        - Easy to test - just check all tuples
+        - Performance is always O(1) regardless of case count
+        """
+        # Teaching: Pure boolean coercion - no conditionals
+        # bool() ensures we get True/False even if values are None
         has_violation = bool(finding.pattern_category)
         has_pattern = bool(finding.pattern_type)
 
-        # Boolean tuple to index mapping - pure data-driven selection
+        # Teaching: Boolean tuple becomes dictionary key
+        # This maps a 2D decision space to a single lookup
         classification_index = (has_violation, has_pattern)
         classification_map = {
             (True, False): cls.VIOLATION,  # Has violation, no pattern
@@ -393,8 +729,21 @@ class FindingClassifier(StrEnum):
         violations: dict["PatternType", list["Finding"]],
         patterns: dict["PositivePattern", list["Finding"]],
     ) -> None:
-        """Add finding to appropriate collection using pure dispatch."""
-        # Pure dictionary dispatch - no conditionals
+        """Add finding to appropriate collection using pure dispatch.
+        
+        Teaching Note: METHOD DISPATCH PATTERN
+        
+        Instead of if/elif checking the classifier type, we:
+        1. Map each enum value to a method
+        2. Look up the method for our value (self)
+        3. Call it with the same parameters
+        
+        This pattern keeps methods small and focused. Each method does
+        ONE thing based on ONE enum value. This is Single Responsibility
+        at the method level.
+        """
+        # Teaching: Pure dictionary dispatch - no conditionals
+        # Maps enum values to methods that handle each case
         collection_handlers = {
             FindingClassifier.VIOLATION: self._add_violation,
             FindingClassifier.PATTERN: self._add_pattern,
@@ -563,32 +912,83 @@ class ModuleType(StrEnum):
 class PatternType(StrEnum):
     """Neutral classification of architectural patterns detected in code.
 
-    These patterns represent different approaches to implementing logic:
-    procedural/imperative patterns vs type-driven patterns. The detector
-    reports what exists without judgment - users decide significance.
-
-    Each pattern type represents a specific programming approach that
-    can be observed and measured in codebases.
+    WHAT: Identifies procedural/imperative patterns that SDA seeks to replace
+    with type-driven alternatives. These aren't necessarily "bad" - they're
+    just different approaches with different tradeoffs.
+    
+    WHY: To migrate from procedural to type-driven architecture, we must first
+    identify where procedural patterns exist. This enum catalogs patterns that
+    have type-driven alternatives.
+    
+    HOW: Each pattern represents a specific coding approach that can be detected
+    via AST analysis and potentially replaced with SDA patterns.
+    
+    Teaching Examples:
+        
+        BUSINESS_CONDITIONALS - Traditional vs SDA:
+        >>> # Traditional:
+        >>> if order.status == 'pending':
+        >>>     process_pending(order)
+        >>> elif order.status == 'shipped':
+        >>>     process_shipped(order)
+        >>> 
+        >>> # SDA alternative (discriminated union):
+        >>> handlers = {
+        >>>     OrderStatus.PENDING: process_pending,
+        >>>     OrderStatus.SHIPPED: process_shipped,
+        >>> }
+        >>> handlers[order.status](order)
+        
+        ISINSTANCE_USAGE - Traditional vs SDA:
+        >>> # Traditional:
+        >>> if isinstance(shape, Circle):
+        >>>     return math.pi * shape.radius ** 2
+        >>> elif isinstance(shape, Rectangle):
+        >>>     return shape.width * shape.height
+        >>> 
+        >>> # SDA alternative (polymorphic dispatch):
+        >>> return shape.calculate_area()  # Each shape knows its formula
+        
+        TRY_EXCEPT_USAGE - Traditional vs SDA:
+        >>> # Traditional:
+        >>> try:
+        >>>     value = dangerous_operation()
+        >>> except ValueError:
+        >>>     value = default_value
+        >>> 
+        >>> # SDA alternative (Result type):
+        >>> result = safe_operation()  # Returns Result[Value, Error]
+        >>> value = result.unwrap_or(default_value)
+    
+    SDA Pattern Demonstrated:
+        Pattern Catalog - By cataloging procedural patterns, we can systematically
+        identify refactoring opportunities. This is "knowledge as data" - the
+        enum itself documents what to look for and why.
+        
+    Philosophy Note:
+        These patterns represent different programming paradigms. Procedural
+        code asks "what type is this?" and "did this fail?" Type-driven
+        code says "you handle yourself" and "success and failure are both values."
     """
 
-    # Conditional logic patterns - different approaches to control flow
-    BUSINESS_CONDITIONALS = "business_conditionals"  # if/elif for business rules
-    ISINSTANCE_USAGE = "isinstance_usage"  # Runtime type checking
-    HASATTR_USAGE = "hasattr_usage"  # Attribute existence checks
-    GETATTR_USAGE = "getattr_usage"  # Dynamic attribute access
-    DICT_GET_USAGE = "dict_get_usage"  # dict.get() instead of typed models
-    TRY_EXCEPT_USAGE = "try_except_usage"  # Exception handling for control flow
+    # Teaching: Conditional logic patterns - different approaches to control flow
+    BUSINESS_CONDITIONALS = "business_conditionals"  # if/elif for business rules - replace with dispatch tables
+    ISINSTANCE_USAGE = "isinstance_usage"  # Runtime type checking - replace with discriminated unions
+    HASATTR_USAGE = "hasattr_usage"  # Attribute existence checks - replace with protocols/interfaces
+    GETATTR_USAGE = "getattr_usage"  # Dynamic attribute access - replace with typed models
+    DICT_GET_USAGE = "dict_get_usage"  # dict.get() instead of typed models - use Pydantic models
+    TRY_EXCEPT_USAGE = "try_except_usage"  # Exception handling for control flow - use Result types
 
-    # Type system patterns - different approaches to type usage
-    ANY_TYPE_USAGE = "any_type_usage"  # Using Any type annotation
-    MISSING_FIELD_CONSTRAINTS = "missing_field_constraints"  # Fields without validation
-    PRIMITIVE_OBSESSION = "primitive_obsession"  # Raw str/int instead of value objects
-    ENUM_VALUE_ACCESS = "enum_value_access"  # .value calls on StrEnum/Enum
-    MISSING_MODEL_CONFIG = "missing_model_config"  # No model configuration
-    NO_FORWARD_REFS = "no_forward_refs"  # Missing forward references
-    MANUAL_VALIDATION = "manual_validation"  # Hand-written validation instead of Pydantic
-    ANEMIC_SERVICES = "anemic_services"  # Services that are just bags of functions
-    MANUAL_JSON_SERIALIZATION = "manual_json_serialization"  # Manual json.dumps/loads instead of Pydantic
+    # Teaching: Type system patterns - different approaches to type usage
+    ANY_TYPE_USAGE = "any_type_usage"  # Using Any type annotation - loses type safety
+    MISSING_FIELD_CONSTRAINTS = "missing_field_constraints"  # Fields without validation - use Field()
+    PRIMITIVE_OBSESSION = "primitive_obsession"  # Raw str/int instead of value objects - wrap in types
+    ENUM_VALUE_ACCESS = "enum_value_access"  # .value calls on StrEnum/Enum - use enum directly
+    MISSING_MODEL_CONFIG = "missing_model_config"  # No model configuration - add ModelConfig
+    NO_FORWARD_REFS = "no_forward_refs"  # Missing forward references - use 'ClassName' strings
+    MANUAL_VALIDATION = "manual_validation"  # Hand-written validation - use Pydantic validators
+    ANEMIC_SERVICES = "anemic_services"  # Services that are just bags of functions - add to models
+    MANUAL_JSON_SERIALIZATION = "manual_json_serialization"  # Manual json.dumps/loads - use model_dump()
 
 
 # FindingClassificationType removed - has broken lambda calls and unused
@@ -603,28 +1003,93 @@ class PatternType(StrEnum):
 class PositivePattern(StrEnum):
     """Enumeration of architectural patterns that align with SDA principles.
 
-    These patterns indicate sophisticated use of Python's type system
-    and Pydantic's capabilities to encode business logic into types
-    rather than procedural code.
-
-    Higher counts of these patterns suggest more mature architectural
-    design that leverages type-driven development.
+    WHAT: Identifies type-driven patterns that represent SDA best practices.
+    These are the patterns we want to see more of in codebases.
+    
+    WHY: These patterns indicate sophisticated use of Python's type system
+    and Pydantic's capabilities to encode business logic into types rather
+    than procedural code. They lead to more maintainable, bug-free software.
+    
+    HOW: Each pattern represents a specific technique for encoding intelligence
+    into the type system, detected via AST analysis.
+    
+    Teaching Examples:
+        
+        PYDANTIC_MODELS - Domain models with built-in validation:
+        >>> class Price(BaseModel):
+        >>>     amount: Decimal = Field(ge=0, decimal_places=2)
+        >>>     currency: Currency  # Currency is an enum
+        >>>     
+        >>>     @computed_field
+        >>>     @property
+        >>>     def display_value(self) -> str:
+        >>>         return f"{self.currency.symbol}{self.amount}"
+        
+        BEHAVIORAL_ENUMS - Enums that encode their own logic:
+        >>> class OrderStatus(StrEnum):
+        >>>     PENDING = "pending"
+        >>>     SHIPPED = "shipped"
+        >>>     
+        >>>     def can_cancel(self) -> bool:
+        >>>         return self == self.PENDING
+        >>>     
+        >>>     def next_status(self) -> Optional['OrderStatus']:
+        >>>         transitions = {
+        >>>             self.PENDING: self.SHIPPED,
+        >>>             self.SHIPPED: None,
+        >>>         }
+        >>>         return transitions[self]
+        
+        TYPE_DISPATCH_TABLES - Replacing conditionals with dictionaries:
+        >>> # Instead of if/elif chains:
+        >>> processors: dict[EventType, Callable] = {
+        >>>     EventType.CREATED: handle_created,
+        >>>     EventType.UPDATED: handle_updated,
+        >>>     EventType.DELETED: handle_deleted,
+        >>> }
+        >>> result = processors[event.type](event)
+        
+        DISCRIMINATED_UNIONS - Type-safe variants:
+        >>> class Result(BaseModel):
+        >>>     # Tagged union with discriminator
+        >>>     kind: Literal["success", "error"] = Field(discriminator="kind")
+        >>> 
+        >>> class Success(Result):
+        >>>     kind: Literal["success"] = "success"
+        >>>     value: Any
+        >>> 
+        >>> class Error(Result):
+        >>>     kind: Literal["error"] = "error"
+        >>>     message: str
+    
+    SDA Pattern Demonstrated:
+        Best Practices Catalog - This enum documents the patterns that represent
+        architectural maturity. Teams can use this as a checklist for code quality.
+        
+    Higher counts of these patterns suggest more mature architectural design
+    that leverages type-driven development. The goal is to maximize these
+    patterns while minimizing the PatternType violations.
+    
+    Philosophy:
+        Each pattern here represents a shift from "telling computers what to do"
+        to "teaching types how to behave." This is the essence of SDA - intelligence
+        in types, not procedures.
     """
 
-    # Core SDA patterns - business logic in types
-    PYDANTIC_MODELS = "pydantic_models"  # BaseModel classes
-    BEHAVIORAL_ENUMS = "behavioral_enums"  # Enums with methods
-    COMPUTED_FIELDS = "computed_fields"  # @computed_field properties
-    VALIDATORS = "validators"  # Pydantic validators
-    PROTOCOLS = "protocols"  # typing.Protocol interfaces
-    TYPE_DISPATCH_TABLES = "type_dispatch_tables"  # Dictionary-based dispatch
+    # Teaching: Core SDA patterns - business logic in types
+    PYDANTIC_MODELS = "pydantic_models"  # BaseModel classes - domain models with validation
+    BEHAVIORAL_ENUMS = "behavioral_enums"  # Enums with methods - logic in the type itself
+    COMPUTED_FIELDS = "computed_fields"  # @computed_field properties - derived state
+    VALIDATORS = "validators"  # Pydantic validators - business rules as types
+    PROTOCOLS = "protocols"  # typing.Protocol interfaces - structural typing
+    TYPE_DISPATCH_TABLES = "type_dispatch_tables"  # Dictionary-based dispatch - no conditionals
 
-    # Pydantic integration patterns
-    PYDANTIC_VALIDATION = "pydantic_validation"  # model_validate* calls
-    PYDANTIC_SERIALIZATION = "pydantic_serialization"  # model_dump* calls
-    IMMUTABLE_UPDATES = "immutable_updates"  # model_copy usage
-    FIELD_CONSTRAINTS = "field_constraints"  # Field() with constraints
-    MODEL_CONFIG_USAGE = "model_config_usage"  # ModelConfig definitions
+    # Teaching: Pydantic integration patterns - leveraging the framework
+    PYDANTIC_VALIDATION = "pydantic_validation"  # model_validate* calls - type-safe parsing
+    PYDANTIC_SERIALIZATION = "pydantic_serialization"  # model_dump* calls - type-safe output
+    IMMUTABLE_UPDATES = "immutable_updates"  # model_copy usage - functional updates
+    FIELD_CONSTRAINTS = "field_constraints"  # Field() with constraints - validation in types
+    MODEL_CONFIG_USAGE = "model_config_usage"  # ModelConfig definitions - model behavior
 
     # Advanced type system patterns
     UNION_TYPES = "union_types"  # Union type annotations

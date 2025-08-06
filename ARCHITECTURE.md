@@ -8,7 +8,7 @@ Objective pattern detection. Domain models analyze themselves. Services orchestr
 src/sda_detector/
 ├── __main__.py                     # CLI entry point
 ├── __init__.py                     # Public API exports
-├── service.py                      # Pure orchestration (~250 lines)
+├── service.py                      # Pure orchestration (~262 lines)
 └── models/
     ├── __init__.py                 # Essential exports only
     ├── core_types.py               # PatternType, PositivePattern, discriminated unions
@@ -19,9 +19,10 @@ src/sda_detector/
     └── analyzers/
         ├── __init__.py
         ├── ast_utils.py            # Shared AST utilities
-        ├── conditional_analyzer.py # Conditional pattern analysis (~170 lines)
-        ├── call_analyzer.py        # Function call pattern analysis (~155 lines)
-        └── attribute_analyzer.py   # Attribute access pattern analysis (~160 lines)
+            ├── conditional_analyzer.py # Conditional pattern analysis (~204 lines)
+    ├── call_analyzer.py        # Function call pattern analysis (~189 lines)
+    ├── attribute_analyzer.py   # Attribute access pattern analysis (~157 lines)
+    └── literal_analyzer.py     # String literal pattern analysis (~106 lines)
 ```
 
 ## Key Architectural Patterns
@@ -55,35 +56,43 @@ Models analyze themselves through computed fields and methods:
 - Zero isinstance/hasattr usage (except marked AST boundaries)
 
 ### Modular Architecture
-- Extracted 427-line monolithic ast_domain.py into focused analyzers
-- Each analyzer: 150-170 lines of pure SDA code
+- Extracted monolithic AST analysis into focused analyzers
+- Each analyzer: 100-200 lines of pure SDA code
 - Service layer: Pure orchestration with discriminated unions
 - Clean separation of concerns throughout
 
 ### Pattern Detection Capabilities
 
 **Violations Detected:**
-- `isinstance/hasattr/getattr` usage
-- Business conditionals (if/elif chains)
-- Try/except for control flow
-- Enum `.value` unwrapping
-- Manual JSON serialization
-- Dict.get() usage
-- Anemic services (limited)
+- `isinstance/hasattr/getattr` usage - Runtime type checking
+- Business conditionals - if/elif chains for business logic
+- Try/except usage - Exception handling for control flow
+- Dict.get() usage - Dictionary access instead of typed models
+- Any type usage - Loss of type safety
+- Enum value access - `.value` calls defeating enum purpose
+- Manual JSON serialization - json.dumps/loads instead of Pydantic
+- Anemic services - Services as bags of functions
+- Missing field constraints - Fields without validation
+- Primitive obsession - Raw str/int instead of value objects
 
 **Positive Patterns Recognized:**
-- Pydantic models and operations
-- Behavioral enums with methods
-- Computed fields
-- Type dispatch tables
-- Discriminated unions
-- Field constraints
-- Immutable updates
+- Pydantic models - BaseModel classes with domain logic
+- Behavioral enums - Enums with methods
+- Computed fields - @computed_field properties
+- Validators - Pydantic field and model validators
+- Protocols - typing.Protocol interfaces
+- Type dispatch tables - Dictionary-based conditional elimination
+- Pydantic validation/serialization - model_validate*/model_dump*
+- Immutable updates - model_copy usage
+- Field constraints - Field() with validation rules
+- Discriminated unions - Tagged union patterns
+- Union/Literal types - Advanced type annotations
+- Forward references - Self-referential types
 
 ### Validation Results
 - **MyPy --strict**: ✅ Success - no issues found
 - **Ruff**: ✅ All checks pass
-- **Self-Analysis**: 97.3% patterns, 2.7% violations (boundary operations)
+- **Self-Analysis**: 97.4% patterns, 2.6% violations (boundary operations)
 - **Test Coverage**: All fixtures detect patterns correctly
 
 ## Boundary Operations
