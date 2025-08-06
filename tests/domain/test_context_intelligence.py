@@ -8,8 +8,8 @@ Rule 050: "Test the domain intelligence, trust Pydantic for the rest"
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from sda_detector.context import RichAnalysisContext
-from sda_detector.models import ModuleType
+from src.sda_detector.models.context_domain import RichAnalysisContext
+from src.sda_detector.models.core_types import ModuleType
 
 
 class BoundaryContextTestCase(BaseModel):

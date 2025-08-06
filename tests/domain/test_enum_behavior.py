@@ -9,7 +9,7 @@ Focus: Business logic in enum methods, not enum value validation.
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from sda_detector.models import ModuleType
+from src.sda_detector.models.core_types import ModuleType
 
 
 class AnalysisPriorityTestCase(BaseModel):
@@ -90,12 +90,12 @@ def test_analysis_priority_business_intelligence():
     priority_test_cases = [
         AnalysisPriorityTestCase(
             module_type=ModuleType.DOMAIN,
-            expected_priority=100,
+            expected_priority=20,
             business_justification="Domain modules contain pure business logic, highest priority",
         ),
         AnalysisPriorityTestCase(
             module_type=ModuleType.INFRASTRUCTURE,
-            expected_priority=80,
+            expected_priority=40,
             business_justification="Infrastructure modules handle critical boundaries, high priority",
         ),
         AnalysisPriorityTestCase(
@@ -105,12 +105,12 @@ def test_analysis_priority_business_intelligence():
         ),
         AnalysisPriorityTestCase(
             module_type=ModuleType.FRAMEWORK,
-            expected_priority=40,
+            expected_priority=80,
             business_justification="Framework modules follow external patterns, lower priority",
         ),
         AnalysisPriorityTestCase(
             module_type=ModuleType.MIXED,
-            expected_priority=20,
+            expected_priority=100,
             business_justification="Mixed modules have unclear concerns, lowest priority",
         ),
     ]
@@ -202,7 +202,7 @@ def test_boundary_classification_completeness():
     boundary_types = {ModuleType.INFRASTRUCTURE, ModuleType.TOOLING, ModuleType.FRAMEWORK}
 
     # Business logic: these use strict domain rules
-    .core_types = {ModuleType.DOMAIN, ModuleType.MIXED}
+    domain_types = {ModuleType.DOMAIN, ModuleType.MIXED}
 
     # Business rule: classifications must be mutually exclusive
     assert boundary_types.isdisjoint(domain_types), (

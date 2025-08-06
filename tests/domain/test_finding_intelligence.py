@@ -8,7 +8,7 @@ We dogfood our own principles by creating test cases as Pydantic models with
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from sda_detector.models import Finding
+from src.sda_detector.models.analysis_domain import Finding
 
 
 class FindingLocationTestCase(BaseModel):

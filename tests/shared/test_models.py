@@ -11,7 +11,7 @@ Rule 050: "Dogfood SDA principles in test design"
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from sda_detector.models import ArchitectureReport, PositivePattern, ViolationType
+from src.sda_detector.models import ArchitectureReport, PositivePattern, PatternType
 
 
 class FixtureAnalysisTestCase(BaseModel):
@@ -27,7 +27,7 @@ class FixtureAnalysisTestCase(BaseModel):
 
     name: str = Field(description="Human-readable test case name")
     fixture_path: str = Field(description="Path to code fixture")
-    expected_violations: list[ViolationType] = Field(description="Violations that should be found")
+    expected_violations: list[PatternType] = Field(description="Violations that should be found")
     expected_patterns: list[PositivePattern] = Field(description="Patterns that should be found")
     min_violation_count: int = Field(ge=0, default=1, description="Minimum violations expected")
     min_pattern_count: int = Field(ge=0, default=0, description="Minimum patterns expected")
@@ -174,14 +174,14 @@ VIOLATION_FIXTURE_TESTS = [
     FixtureAnalysisTestCase(
         name="isinstance Heavy Violations",
         fixture_path="tests/fixtures/violations/isinstance_heavy.py",
-        expected_violations=[ViolationType.ISINSTANCE_VIOLATIONS, ViolationType.BUSINESS_CONDITIONALS],
+        expected_violations=[PatternType.ISINSTANCE_USAGE, PatternType.BUSINESS_CONDITIONALS],
         expected_patterns=[],
         min_violation_count=5,  # Expect substantial isinstance usage
     ),
     FixtureAnalysisTestCase(
         name="Manual JSON Serialization",
         fixture_path="tests/fixtures/violations/manual_json.py",
-        expected_violations=[ViolationType.MANUAL_JSON_SERIALIZATION],
+        expected_violations=[PatternType.MANUAL_JSON_SERIALIZATION],
         expected_patterns=[],
         min_violation_count=3,  # Multiple json.dumps/loads calls
     ),

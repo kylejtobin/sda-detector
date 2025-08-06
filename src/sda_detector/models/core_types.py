@@ -551,13 +551,13 @@ class ModuleType(StrEnum):
     def analysis_priority(self) -> int:
         """Self-determining analysis priority using type dispatch."""
         priorities = {
-            ModuleType.DOMAIN: 100,  # Highest priority - pure business logic
-            ModuleType.INFRASTRUCTURE: 80,  # High priority - critical boundaries
+            ModuleType.DOMAIN: 20,  # Highest priority (lowest number) - pure business logic
+            ModuleType.INFRASTRUCTURE: 40,  # High priority - critical boundaries
             ModuleType.TOOLING: 60,  # Medium priority - development tools
-            ModuleType.FRAMEWORK: 40,  # Lower priority - external integration
-            ModuleType.MIXED: 20,  # Lowest priority - mixed concerns
+            ModuleType.FRAMEWORK: 80,  # Lower priority - external integration
+            ModuleType.MIXED: 100,  # Lowest priority (highest number) - mixed concerns
         }
-        return priorities.get(self, 10)
+        return priorities.get(self, 110)
 
 
 class PatternType(StrEnum):
