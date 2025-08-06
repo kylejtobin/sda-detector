@@ -8,24 +8,10 @@ Following SDA principles:
 - Each analyzer is a self-contained domain model
 - Analyzers know how to analyze themselves from AST nodes
 - No external business logic - all intelligence is in the models
+
+These analyzers are imported directly by core_types.py for dispatch.
+They are not part of the public API.
 """
 
-from .attribute_analyzer import AttributeAnalyzer, AttributeDomain, AttributePattern
-from .call_analyzer import CallAnalyzer, CallDomain, CallPattern
-from .conditional_analyzer import (
-    ConditionalAnalyzer,
-    ConditionalDomain,
-    ConditionalPattern,
-)
-
-__all__ = [
-    "AttributeAnalyzer",
-    "AttributeDomain",
-    "AttributePattern",
-    "CallAnalyzer",
-    "CallDomain",
-    "CallPattern",
-    "ConditionalAnalyzer",
-    "ConditionalDomain",
-    "ConditionalPattern",
-]
+# No exports - analyzers are internal implementation details
+__all__: list[str] = []

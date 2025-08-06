@@ -1,4 +1,4 @@
-.PHONY: help setup check test clean install-uv run self-analyze legacy-run legacy-self-analyze
+.PHONY: help setup check test clean install-uv run self-analyze analyze-tests compliance-report legacy-run legacy-self-analyze
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
@@ -36,6 +36,23 @@ run: ## Run SDA detector on a file (usage: make run FILE=path/to/file.py)
 
 self-analyze: ## Run SDA detector on itself (dogfooding)
 	uv run python -m sda_detector src/sda_detector "SDA Detector Self-Analysis"
+
+analyze-tests: ## Run SDA detector on test suite (excluding fixtures)
+	@echo "📊 Analyzing test suite for SDA compliance..."
+	@echo "Domain tests:"
+	@uv run python -m sda_detector tests/domain
+	@echo "\nIntegration tests:"
+	@uv run python -m sda_detector tests/integration
+
+compliance-report: ## Generate full SDA compliance report
+	@echo "🏛️ SDA COMPLIANCE REPORT"
+	@echo "========================"
+	@echo "\n📁 Source Code (src/sda_detector):"
+	@uv run python -m sda_detector src/sda_detector | tail -4
+	@echo "\n📁 Domain Tests:"
+	@uv run python -m sda_detector tests/domain | tail -4
+	@echo "\n📁 Integration Tests:"
+	@uv run python -m sda_detector tests/integration | tail -4
 
 legacy-run: ## DEPRECATED - Use 'make run' instead
 	@echo "❌ legacy-run is deprecated. Use 'make run' instead."

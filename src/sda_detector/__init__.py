@@ -1,16 +1,13 @@
-"""SDA Detector - Semantic Domain Architecture analysis tool.
+"""SDA Detector - Strict Discriminated Architecture analysis tool.
 
-This package provides tools for analyzing Python codebases to detect
-architectural patterns that align with or violate SDA principles.
+This package analyzes Python codebases to detect patterns that align 
+with or violate Strict Discriminated Architecture principles.
 
 ## Public API
-
-For most users, these are the primary interfaces:
 
 ```python
 # Command-line usage
 from sda_detector import main
-
 main()  # Uses sys.argv
 
 # Programmatic usage
@@ -19,26 +16,27 @@ from sda_detector import analyze_module, print_report
 report = analyze_module("path/to/code", "module_name")
 print_report(report, "module_name")
 
-# Custom analysis
-from sda_detector import DetectionService, ReportingService
+# Advanced usage with service
+from sda_detector.service import DetectionService
 
-detection = DetectionService()
-reporting = ReportingService()
-report = detection.analyze_module("path", "name")
-reporting.print_report(report, "name")
+service = DetectionService()
+report = service.analyze_module("path", "name")
 ```
 
 ## Architecture
 
-The package follows SDA principles in its own design:
+The package exemplifies SDA principles:
 
-- **Models** (`models.py`) - Domain objects with business logic
-- **Protocols** (`protocols.py`) - Interface contracts
-- **Services** (`services.py`) - Orchestration and infrastructure
+- **Domain Models** (`models/`) - Rich domain objects with behavioral intelligence
+- **Analyzers** (`models/analyzers/`) - Self-analyzing domain models
+- **Service** (`service.py`) - Pure orchestration with zero business logic
 
-The models contain ALL the business logic about what constitutes
-violations, patterns, and how to analyze them. Services only
-coordinate external resources (file system, AST parsing).
+Key SDA patterns demonstrated:
+- Discriminated unions for all branching logic
+- Behavioral enums with methods
+- Zero isinstance/hasattr usage (except marked boundaries)
+- Immutable models with computed properties
+- Pure functional transformations
 """
 
 # Minimal public API - only what external users need

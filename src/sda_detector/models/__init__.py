@@ -1,40 +1,28 @@
-"""SDA Detector Models - Domain-driven architecture organized by business concerns.
+"""SDA Detector Models - Domain-driven architecture with behavioral intelligence.
 
-This package organizes domain models by business functionality rather than
-technical layers, following SDA principles for clear domain boundaries.
+This package organizes domain models following SDA principles:
+- Rich domain models with business logic
+- Behavioral enums with methods
+- Self-analyzing models through computed fields
+- Immutable models with pure functional updates
 
 ## Domain Organization
 
-- **domain_types**: Core vocabulary (enums, fundamental types)
-- **analysis_domain**: How we analyze code (findings, context, config)
-- **reporting_domain**: How we present results (reports, formatting)
-- **ast_intelligence**: Pure SDA AST analysis models
-
-All models are re-exported here for backward compatibility with existing code.
+- **core_types**: Fundamental enums and discriminated unions
+- **analysis_domain**: Core findings and pattern detection
+- **context_domain**: Rich analysis context that flows through traversal
+- **classification_domain**: Module and path classification intelligence
+- **reporting_domain**: Report generation and metrics
+- **analyzers/**: Self-analyzing domain models for specific patterns
 """
 
-# Core Types - Fundamental domain vocabulary
-# Analysis Domain - How we analyze code
-from .analysis_domain import Finding
-
-# Classification Domain - Module classification logic
-from .classification_domain import ModuleClassifier
-
-# Context Domain - Rich analysis context
-from .context_domain import AnalysisScope, RichAnalysisContext
+# Only export what's needed by external users (main __init__.py)
 from .core_types import ModuleType, PatternType, PositivePattern
-
-# Reporting Domain - How we present results
 from .reporting_domain import ArchitectureReport
 
-# Complete public API - Essential exports only
 __all__ = [
-    "AnalysisScope",
     "ArchitectureReport",
-    "Finding",
-    "ModuleClassifier",
     "ModuleType",
     "PatternType",
     "PositivePattern",
-    "RichAnalysisContext",
 ]

@@ -1,12 +1,19 @@
-"""Streamlined SDA Detection Service - Clean separation of concerns.
+"""SDA Detection Service - Pure orchestration with zero business logic.
 
-This service demonstrates the three-layer architecture:
-1. AST Boundary Layer: Simple adapters for defensive AST access
-2. Rich Context Layer: Domain intelligence that accumulates during traversal
-3. Pattern Analysis Layer: Pure SDA analyzers that understand code patterns
+This service exemplifies SDA principles through:
+- Pure orchestration without business decisions
+- Discriminated union dispatch for all branching
+- Delegation to self-analyzing domain models
+- Immutable context threading
+- Clean separation of concerns
 
-Gone: 720 lines of over-engineered AST intelligence
-Here: ~100 lines of clean, focused orchestration
+The service coordinates:
+1. File system operations (boundary)
+2. AST parsing (boundary) 
+3. Domain model analysis (intelligence)
+4. Report generation (aggregation)
+
+All business logic lives in domain models that analyze themselves.
 """
 
 import ast
@@ -21,12 +28,15 @@ from .models.core_types import ModuleType, PatternType, PositivePattern
 from .models.reporting_domain import ArchitectureReport
 
 
-class StreamlinedDetectionService:
-    """Clean, focused detection service using the three-layer architecture."""
+class DetectionService:
+    """Pure orchestration service with zero business logic.
+    
+    Coordinates file operations, AST parsing, and domain model analysis
+    using discriminated union dispatch for all branching.
+    """
 
     def __init__(self) -> None:
-        """Initialize streamlined detection service with pure SDA approach."""
-        # Pure SDA - no external analyzers needed, domain models analyze themselves
+        """Initialize detection service - no state needed."""
         pass
 
     def analyze_module(self, module_path: str, module_name: str | None = None) -> ArchitectureReport:
@@ -50,17 +60,17 @@ class StreamlinedDetectionService:
     def _classify_module_type(self, module_path: str) -> ModuleType:
         """Module classification using pure discriminated union dispatch."""
         from .models.core_types import ModuleTypeClassifier
-        
+
         # Pure SDA - delegate to enum's behavioral method
         return ModuleTypeClassifier.from_path(module_path)
 
     def _get_python_files(self, module_path: str) -> list[str]:
         """Get Python files to analyze using pure discriminated union dispatch."""
         from .models.core_types import PathType
-        
+
         # Classify path using enum's factory method
         path_type = PathType.from_path(module_path)
-        
+
         # Pure discriminated union dispatch - no conditionals
         return path_type.get_python_files(module_path)
 
@@ -102,15 +112,16 @@ class StreamlinedDetectionService:
 
             # Use discriminated union dispatch for node analysis
             from .models.core_types import ASTNodeType
-            
+
             node_type = ASTNodeType.from_ast(node)
-            
+
             # Pure SDA: Node types know how to analyze themselves
             node_findings = node_type.create_analyzer_findings(node, node_context)
             findings.extend(node_findings)
 
         # Add string literal repetition analysis (runs once per file)
         from .models.analyzers.literal_analyzer import LiteralAnalyzer
+
         literal_findings = LiteralAnalyzer.analyze_tree(tree, base_context)
         findings.extend(literal_findings)
 
@@ -130,14 +141,14 @@ class StreamlinedDetectionService:
 
             # Pure discriminated union dispatch - zero conditionals
             from .models.core_types import ASTNodeType
-            
+
             node_type = ASTNodeType.from_ast(node)
-            
+
             # Define child visitor for the behavioral method
             def visit_children(n: ast.AST) -> None:
                 for child in ast.iter_child_nodes(n):
                     visit_node(child)
-            
+
             # Delegate all scope handling logic to the enum's behavioral method
             # No if/else needed - pure discriminated union dispatch
             node_type.process_with_scope(node, current_scopes, visit_children)
@@ -165,11 +176,11 @@ class StreamlinedDetectionService:
 
         # Pure SDA: Use FindingClassifier for discriminated union dispatch
         from .models.core_types import FindingClassifier
-        
+
         for finding in findings:
             # Classify finding using enum's factory method
             classifier = FindingClassifier.from_finding(finding)
-            
+
             # Pure discriminated union dispatch - no conditionals
             classifier.add_to_collections(finding, violations, patterns)
 
@@ -180,7 +191,7 @@ class StreamlinedDetectionService:
 
 
 # Module-level service instance
-service = StreamlinedDetectionService()
+service = DetectionService()
 
 
 def analyze_module(module_path: str, module_name: str | None = None) -> ArchitectureReport:
@@ -197,12 +208,12 @@ def main() -> None:
     # Pure SDA - classify arguments and handle via dispatch
     arg_state = CLIArgumentState.from_argv(sys.argv)
     module_path, module_name, should_continue = arg_state.handle_arguments(sys.argv)
-    
+
     # Pure dispatch - no conditionals
     # When should_continue is False, module_path is None (guaranteed by enum)
     # When should_continue is True, module_path is not None (guaranteed by enum)
     from collections.abc import Callable
-    
+
     continuations: dict[bool, Callable[[], None]] = {
         False: lambda: None,
         True: lambda: _run_analysis_safe(module_path, module_name),
@@ -214,10 +225,10 @@ def _run_analysis_safe(module_path: str | None, module_name: str | None) -> None
     """Run analysis with path that enum guarantees is valid when called."""
     # The discriminated union GUARANTEES module_path is not None when this is called
     # We trust the enum dispatch completely - no defensive coding needed
-    
+
     # Direct call - the enum ensures this is safe
     report = analyze_module(module_path or "", module_name)  # Empty string fallback for type checker
-    
+
     _format_report(report)
 
 
