@@ -7,6 +7,35 @@
 [![Code style: SDA](https://img.shields.io/badge/code%20style-SDA-purple.svg)](https://github.com/kylejobin/sda-detector)
 [![License](https://img.shields.io/github/license/kylejtobin/sda-detector)](https://github.com/kylejobin/sda-detector/blob/main/LICENSE)
 
+## ⚡ Quick Start
+
+```bash
+# Clone and setup (one command, handles everything)
+git clone https://github.com/kylejobin/sda-detector.git && cd sda-detector && make setup
+
+# Analyze any Python file
+make run FILE=your_module.py
+
+# See what SDA looks like (self-analysis)
+make self-analyze
+```
+
+That's it. No virtual env management, no dependency hunting, no setup guides. The Makefile handles everything.
+
+### 📋 All Commands
+
+```bash
+make help          # Show all available commands
+make setup         # Install uv + dependencies + package (do this first)
+make run FILE=x.py # Analyze any Python file
+make self-analyze  # Run detector on itself (dogfooding)
+make check         # Run linters (ruff + mypy)
+make test          # Run test suite
+make clean         # Clean caches
+```
+
+**Requirements:** Python 3.12+ (that's it - `make setup` installs everything else including `uv`)
+
 > **"What if your data knew what to do with itself?"**
 
 You know that moment when you're reading code and you realize the actual business logic is scattered across seventeen files, hidden behind three layers of abstraction, defended by try/except blocks that catch exceptions that should never happen?
@@ -159,38 +188,6 @@ class Order(BaseModel):
 ```
 
 The order knows how to be an order. Revolutionary concept, I know.
-
-## 🚀 Quick Start
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/kylejobin/sda-detector.git
-cd sda-detector
-
-# One-command setup (installs all dependencies and package in dev mode)
-make setup
-```
-
-### Basic Usage
-
-```bash
-# Analyze any file (after running 'make setup')
-make run FILE=my_module.py
-
-# Self-analysis (dogfooding)
-make self-analyze
-
-# Manual execution
-uv run python -m sda_detector my_module.py
-
-# Analyze a directory
-uv run python -m sda_detector src/domain/
-
-# Analyze with custom name
-uv run python -m sda_detector src/models/ "User Domain Models"
-```
 
 ## 🧪 The SDA Litmus Test
 
