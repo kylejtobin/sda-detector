@@ -68,6 +68,7 @@ class ASTNodeType(StrEnum):
     FUNCTION_DEF = "function_def"
     CLASS_DEF = "class_def"
     CONDITIONAL = "conditional"
+    MATCH_CASE = "match_case"
     CALL = "call"
     ATTRIBUTE = "attribute"
     UNKNOWN = "unknown"
@@ -84,6 +85,7 @@ class ASTNodeType(StrEnum):
             ast.AsyncFunctionDef: ASTNodeType.FUNCTION_DEF,
             ast.ClassDef: ASTNodeType.CLASS_DEF,
             ast.If: ASTNodeType.CONDITIONAL,
+            ast.Match: ASTNodeType.MATCH_CASE,
             ast.Call: ASTNodeType.CALL,
             ast.Attribute: ASTNodeType.ATTRIBUTE,
         }
@@ -91,7 +93,7 @@ class ASTNodeType(StrEnum):
 
     def creates_scope(self) -> bool:
         """Behavioral method - node types know if they create analysis scopes."""
-        scope_creators = {ASTNodeType.FUNCTION_DEF, ASTNodeType.CLASS_DEF, ASTNodeType.CONDITIONAL}
+        scope_creators = {ASTNodeType.FUNCTION_DEF, ASTNodeType.CLASS_DEF, ASTNodeType.CONDITIONAL, ASTNodeType.MATCH_CASE}
         return self in scope_creators
 
     def process_with_scope(
@@ -108,6 +110,7 @@ class ASTNodeType(StrEnum):
             ASTNodeType.FUNCTION_DEF: self._process_with_new_scope,
             ASTNodeType.CLASS_DEF: self._process_with_new_scope,
             ASTNodeType.CONDITIONAL: self._process_with_new_scope,
+            ASTNodeType.MATCH_CASE: self._process_with_new_scope,
             # Non-scope creators: just visit children
             ASTNodeType.CALL: self._process_without_scope,
             ASTNodeType.ATTRIBUTE: self._process_without_scope,
@@ -139,6 +142,7 @@ class ASTNodeType(StrEnum):
             ASTNodeType.FUNCTION_DEF: self._create_function_scope,
             ASTNodeType.CLASS_DEF: self._create_class_scope,
             ASTNodeType.CONDITIONAL: self._create_conditional_scope,
+            ASTNodeType.MATCH_CASE: self._create_match_scope,
             ASTNodeType.CALL: self._create_call_scope,
             ASTNodeType.ATTRIBUTE: self._create_attribute_scope,
             ASTNodeType.UNKNOWN: self._create_unknown_scope,
@@ -162,6 +166,7 @@ class ASTNodeType(StrEnum):
         # The from_ast() method GUARANTEES the node type
         analyzer_dispatch: dict[ASTNodeType, Callable[[], list[Finding]]] = {
             ASTNodeType.CONDITIONAL: lambda: ConditionalAnalyzer.analyze_node(node, context),
+            ASTNodeType.MATCH_CASE: lambda: ConditionalAnalyzer.analyze_node(node, context),  # Match/case is a conditional pattern
             ASTNodeType.CALL: lambda: CallAnalyzer.analyze_node(node, context),
             ASTNodeType.ATTRIBUTE: lambda: AttributeAnalyzer.analyze_node(node, context),
             ASTNodeType.FUNCTION_DEF: lambda: [],
@@ -200,6 +205,14 @@ class ASTNodeType(StrEnum):
 
         return AnalysisScope(
             scope_type=ScopeType.CONDITIONAL, name=ScopeNaming.CONDITIONAL, line_number=getattr(node, "lineno", 0)
+        )
+
+    def _create_match_scope(self, node: ast.AST) -> "AnalysisScope":
+        """Create match/case scope using discriminated union pattern."""
+        from .context_domain import AnalysisScope, ScopeType
+
+        return AnalysisScope(
+            scope_type=ScopeType.CONDITIONAL, name="match_case", line_number=getattr(node, "lineno", 0)
         )
 
     def _create_call_scope(self, node: ast.AST) -> "AnalysisScope":

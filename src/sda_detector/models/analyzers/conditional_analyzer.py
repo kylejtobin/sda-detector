@@ -35,6 +35,7 @@ class ConditionalPattern(StrEnum):
     TYPE_GUARD = "type_guard"
     VALIDATION_CHECK = "validation_check"
     BOUNDARY_CONDITION = "boundary_condition"
+    LAZY_INITIALIZATION = "lazy_initialization"
     BUSINESS_LOGIC = "business_logic"
 
     def create_finding(self, file_path: str, line_number: int, expression: str) -> "Finding":
@@ -50,6 +51,7 @@ class ConditionalPattern(StrEnum):
             ConditionalPattern.TYPE_GUARD: PositivePattern.TYPE_CHECKING_IMPORTS,
             ConditionalPattern.VALIDATION_CHECK: PositivePattern.BOUNDARY_CONDITIONS,
             ConditionalPattern.BOUNDARY_CONDITION: PositivePattern.BOUNDARY_CONDITIONS,
+            ConditionalPattern.LAZY_INITIALIZATION: PatternType.BUSINESS_CONDITIONALS,  # Lazy init is a violation
             ConditionalPattern.BUSINESS_LOGIC: PatternType.BUSINESS_CONDITIONALS,
         }
 
@@ -84,6 +86,13 @@ class ConditionalDomain(BaseModel):
         """Domain intelligence: does this suggest boundary handling?"""
         boundary_patterns = ["error", "exception", "none", "empty", "exists"]
         return any(pattern in self.test_expression.lower() for pattern in boundary_patterns)
+    
+    @computed_field
+    @property
+    def is_lazy_initialization(self) -> bool:
+        """Domain intelligence: is this lazy initialization pattern?"""
+        lazy_patterns = ["_cache is None", "_initialized", "not self._", "self._ is None"]
+        return any(pattern in self.test_expression for pattern in lazy_patterns)
 
     @computed_field
     @property
@@ -99,26 +108,37 @@ class ConditionalDomain(BaseModel):
         classification_key = (
             self.is_type_checking,
             validation_scope,
+            self.is_lazy_initialization,
             self.suggests_boundary_logic
         )
         
         # Exhaustive mapping of all combinations (priority encoded in order)
         classification_map = {
             # Type checking takes highest priority
-            (True, False, False): ConditionalPattern.TYPE_GUARD,
-            (True, False, True): ConditionalPattern.TYPE_GUARD,
-            (True, True, False): ConditionalPattern.TYPE_GUARD,
-            (True, True, True): ConditionalPattern.TYPE_GUARD,
+            (True, False, False, False): ConditionalPattern.TYPE_GUARD,
+            (True, False, False, True): ConditionalPattern.TYPE_GUARD,
+            (True, False, True, False): ConditionalPattern.TYPE_GUARD,
+            (True, False, True, True): ConditionalPattern.TYPE_GUARD,
+            (True, True, False, False): ConditionalPattern.TYPE_GUARD,
+            (True, True, False, True): ConditionalPattern.TYPE_GUARD,
+            (True, True, True, False): ConditionalPattern.TYPE_GUARD,
+            (True, True, True, True): ConditionalPattern.TYPE_GUARD,
             
             # Validation scope takes second priority
-            (False, True, False): ConditionalPattern.VALIDATION_CHECK,
-            (False, True, True): ConditionalPattern.VALIDATION_CHECK,
+            (False, True, False, False): ConditionalPattern.VALIDATION_CHECK,
+            (False, True, False, True): ConditionalPattern.VALIDATION_CHECK,
+            (False, True, True, False): ConditionalPattern.VALIDATION_CHECK,
+            (False, True, True, True): ConditionalPattern.VALIDATION_CHECK,
             
-            # Boundary logic takes third priority
-            (False, False, True): ConditionalPattern.BOUNDARY_CONDITION,
+            # Lazy initialization takes third priority
+            (False, False, True, False): ConditionalPattern.LAZY_INITIALIZATION,
+            (False, False, True, True): ConditionalPattern.LAZY_INITIALIZATION,
+            
+            # Boundary logic takes fourth priority
+            (False, False, False, True): ConditionalPattern.BOUNDARY_CONDITION,
             
             # Default to business logic
-            (False, False, False): ConditionalPattern.BUSINESS_LOGIC,
+            (False, False, False, False): ConditionalPattern.BUSINESS_LOGIC,
         }
         
         return classification_map[classification_key]

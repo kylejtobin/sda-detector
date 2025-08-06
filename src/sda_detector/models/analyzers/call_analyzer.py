@@ -11,8 +11,9 @@ CRITICAL SDA COMPLIANCE:
 """
 
 import ast
+from collections.abc import Callable
 from enum import StrEnum
-from typing import TYPE_CHECKING, Callable, Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
@@ -76,7 +77,7 @@ class CallDomain(BaseModel):
         SDA Principle: Pure dictionary dispatch - no conditionals.
         """
         # Pure dictionary dispatch for function classification
-        type_check_functions = {"isinstance", "type", "hasattr", "getattr"}
+        type_check_functions = {"isinstance", "type", "hasattr", "getattr", "cast", "Any"}
         json_functions = {"dumps", "loads", "dump", "load"}
         pydantic_functions = {"model_dump", "model_validate", "model_copy", "Field"}
         

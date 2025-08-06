@@ -109,6 +109,11 @@ class StreamlinedDetectionService:
             node_findings = node_type.create_analyzer_findings(node, node_context)
             findings.extend(node_findings)
 
+        # Add string literal repetition analysis (runs once per file)
+        from .models.analyzers.literal_analyzer import LiteralAnalyzer
+        literal_findings = LiteralAnalyzer.analyze_tree(tree, base_context)
+        findings.extend(literal_findings)
+
         return findings
 
     def _build_scope_map(self, tree: ast.AST) -> dict[ast.AST, list[AnalysisScope]]:
