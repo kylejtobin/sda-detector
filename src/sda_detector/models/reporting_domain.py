@@ -135,6 +135,16 @@ class ComplianceGrade(StrEnum):
             self.POOR: "D"
         }
         return grade_map[self]
+    
+    def format_assessment(self) -> str:
+        """Format compliance assessment with celebratory language using dictionary dispatch."""
+        assessment_map = {
+            self.EXCELLENT: "🏆 PERFECT COMPLIANCE - This module demonstrates mastery of SDA principles!",
+            self.GOOD: "✨ Strong SDA compliance with minor opportunities for improvement",
+            self.NEEDS_IMPROVEMENT: "⚠️ Several SDA violations detected - refactoring recommended",
+            self.POOR: "❌ Significant architectural issues require immediate attention"
+        }
+        return assessment_map[self]
 
 
 class CelebrationLevel(StrEnum):
@@ -229,6 +239,22 @@ class ScanMetrics(BaseModel):
         points.extend([f"{self.protocol_boundaries} clean protocol boundaries maintained"] * bool(self.protocol_boundaries))
         
         return points or ["Clean module structure maintained"]
+    
+    def format_summary(self) -> str:
+        """Format scan metrics summary with celebratory language."""
+        summary_lines = [
+            "📊 SCAN METRICS:",
+            f"  Files Scanned: {self.files_scanned}",
+            f"  Models Analyzed: {self.models_analyzed}",
+            f"  SDA Patterns Found: {self.computed_fields_count + self.frozen_models + self.behavioral_enums}",
+        ]
+        
+        # Add architectural richness score for exceptional modules
+        richness = self.architectural_richness
+        richness_display = f"  Architectural Richness: {richness:.1f}%" * bool(richness > 0)
+        summary_lines.extend([richness_display] * bool(richness_display))
+        
+        return "\n".join(summary_lines)
 
 
 class ArchitectureReport(BaseModel):
@@ -413,3 +439,50 @@ class ArchitectureReport(BaseModel):
             "patterns": (self.total_patterns / safe_total) * bool(total),
             "violations": (self.total_violations / safe_total) * bool(total),
         }
+    
+    @computed_field
+    @property
+    def celebration_level(self) -> CelebrationLevel:
+        """Compute celebration level from violation and pattern counts."""
+        return CelebrationLevel.from_metrics(self.total_violations, self.total_patterns)
+    
+    @computed_field
+    @property
+    def compliance_grade(self) -> ComplianceGrade:
+        """Compute compliance grade from violation count."""
+        return ComplianceGrade.from_violation_count(self.total_violations)
+    
+    @computed_field
+    @property
+    def scan_metrics(self) -> ScanMetrics:
+        """Compute scan metrics from analyzed data."""
+        # Count specific pattern types
+        computed_count = sum(len(findings) for pattern, findings in self.patterns.items() 
+                            if pattern == PositivePattern.COMPUTED_FIELDS)
+        
+        return ScanMetrics(
+            files_scanned=self.files_analyzed,
+            models_analyzed=len(self.violations) + len(self.patterns),  # Approximation
+            frozen_models=0,  # Would need deeper analysis
+            behavioral_enums=0,  # Would need deeper analysis
+            computed_fields_count=computed_count,
+            protocol_boundaries=0  # Would need deeper analysis
+        )
+    
+    @computed_field
+    @property
+    def celebration_header(self) -> str:
+        """Generate celebratory header based on celebration level - pure delegation."""
+        return self.celebration_level.format_header()
+    
+    @computed_field
+    @property
+    def scan_summary(self) -> str:
+        """Generate scan metrics summary - pure delegation."""
+        return self.scan_metrics.format_summary()
+    
+    @computed_field
+    @property
+    def compliance_assessment(self) -> str:
+        """Generate compliance assessment message - pure delegation."""
+        return self.compliance_grade.format_assessment()

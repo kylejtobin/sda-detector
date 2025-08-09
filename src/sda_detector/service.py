@@ -407,11 +407,42 @@ def _run_analysis_safe(module_path: str | None, module_name: str | None) -> None
 
 
 def _format_report(report: ArchitectureReport) -> None:
-    """Format and print the analysis report."""
-    # Simple report formatting
-    print(f"🧠 SDA ARCHITECTURE ANALYSIS - {report.module_type.upper()}")
+    """Format and print the analysis report using pure computed field delegation."""
+    # Pure delegation to computed fields
+    print(report.celebration_header)
     print("=" * 70)
+    
+    # Special celebratory output for zero violations
+    zero_violations = report.total_violations == 0
+    
+    # Dictionary dispatch for output selection
+    from collections.abc import Callable
+    
+    output_functions: dict[bool, Callable[[], None]] = {
+        True: lambda: _format_celebration(report),  # Zero violations
+        False: lambda: _format_standard(report)  # Has violations
+    }
+    output_functions[zero_violations]()
 
+
+def _format_celebration(report: ArchitectureReport) -> None:
+    """Format celebratory output for zero-violation modules."""
+    print(report.compliance_assessment)
+    print()
+    print(report.scan_summary)
+    print()
+    
+    # Show architectural excellence points
+    print("✨ ARCHITECTURAL EXCELLENCE:")
+    for point in report.scan_metrics.excellence_summary:
+        print(f"  • {point}")
+    
+    print()
+    print("💯 This module demonstrates mastery of SDA principles!")
+
+
+def _format_standard(report: ArchitectureReport) -> None:
+    """Format standard output for modules with violations."""
     print("🔍 SDA VIOLATIONS DETECTED:")
     for violation_type, findings in report.violations.items():
         count = len(findings)
