@@ -59,6 +59,7 @@ understand how to compute their own statistics. This eliminates entire
 classes of calculation bugs and keeps logic close to data.
 """
 
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
@@ -68,6 +69,192 @@ from .core_types import ModuleType, PatternType, PositivePattern
 
 if TYPE_CHECKING:
     pass  # config.py removed - using inline configuration
+
+
+class ComplianceGrade(StrEnum):
+    """Behavioral enum for compliance grading with self-describing presentation.
+    
+    This enum demonstrates pure SDA: Instead of if/else chains to determine
+    grades, we use dictionary dispatch and behavioral methods that understand
+    their own presentation logic.
+    """
+    
+    EXCELLENT = "excellent"
+    GOOD = "good"
+    NEEDS_IMPROVEMENT = "needs_improvement"
+    POOR = "poor"
+    
+    @classmethod
+    def from_violation_count(cls, count: int) -> "ComplianceGrade":
+        """Determine grade using boolean arithmetic - zero conditionals."""
+        # Boolean range checks encode grade thresholds
+        is_excellent = count == 0
+        is_good = (count > 0) * (count <= 5)  # Between 1 and 5
+        is_needs_improvement = (count > 5) * (count <= 15)  # Between 6 and 15
+        # is_poor = count > 15 (implicit, when others are False)
+        
+        # Boolean arithmetic computes grade index
+        # EXCELLENT = 3, GOOD = 2, NEEDS_IMPROVEMENT = 1, POOR = 0
+        grade_index = (
+            is_excellent * 3 +
+            is_good * 2 +
+            is_needs_improvement * 1
+            # POOR = 0 (default when none of above)
+        )
+        
+        # Pure list indexing - no conditionals
+        grades = [cls.POOR, cls.NEEDS_IMPROVEMENT, cls.GOOD, cls.EXCELLENT]
+        return grades[grade_index]
+    
+    def to_emoji(self) -> str:
+        """Convert grade to emoji representation using dictionary dispatch."""
+        emoji_map = {
+            self.EXCELLENT: "✅",
+            self.GOOD: "👍",
+            self.NEEDS_IMPROVEMENT: "⚠️",
+            self.POOR: "❌"
+        }
+        return emoji_map[self]
+    
+    def to_message(self) -> str:
+        """Convert grade to descriptive message using dictionary dispatch."""
+        message_map = {
+            self.EXCELLENT: "🎉 PERFECT SDA COMPLIANCE DETECTED!",
+            self.GOOD: "✨ Good SDA compliance with minor issues",
+            self.NEEDS_IMPROVEMENT: "⚠️ Several SDA violations need attention",
+            self.POOR: "❌ Significant SDA violations require refactoring"
+        }
+        return message_map[self]
+    
+    def to_letter_grade(self) -> str:
+        """Convert to traditional letter grade using dictionary dispatch."""
+        grade_map = {
+            self.EXCELLENT: "A+",
+            self.GOOD: "B",
+            self.NEEDS_IMPROVEMENT: "C",
+            self.POOR: "D"
+        }
+        return grade_map[self]
+    
+    def format_assessment(self) -> str:
+        """Format compliance assessment with celebratory language using dictionary dispatch."""
+        assessment_map = {
+            self.EXCELLENT: "🏆 PERFECT COMPLIANCE - This module demonstrates mastery of SDA principles!",
+            self.GOOD: "✨ Strong SDA compliance with minor opportunities for improvement",
+            self.NEEDS_IMPROVEMENT: "⚠️ Several SDA violations detected - refactoring recommended",
+            self.POOR: "❌ Significant architectural issues require immediate attention"
+        }
+        return assessment_map[self]
+
+
+class CelebrationLevel(StrEnum):
+    """Behavioral enum for determining celebration level of clean code.
+    
+    Pure SDA pattern: The enum knows how to present different levels of
+    celebration without external conditionals.
+    """
+    
+    EXCEPTIONAL = "exceptional"  # Zero violations with rich patterns
+    CLEAN = "clean"  # Zero violations
+    MIXED = "mixed"  # Has both patterns and violations
+    PROBLEMATIC = "problematic"  # More violations than patterns
+    
+    @classmethod
+    def from_metrics(cls, violations: int, patterns: int) -> "CelebrationLevel":
+        """Determine celebration level using boolean arithmetic - zero conditionals."""
+        # Boolean flags encode business rules
+        is_zero_violations = violations == 0
+        is_rich_patterns = patterns > 10
+        is_more_patterns = patterns > violations
+        
+        # Boolean arithmetic computes classification score
+        # EXCEPTIONAL = 3, CLEAN = 2, MIXED = 1, PROBLEMATIC = 0
+        level_score = (
+            is_zero_violations * is_rich_patterns * 3 +  # EXCEPTIONAL when zero violations AND rich patterns
+            is_zero_violations * (not is_rich_patterns) * 2 +  # CLEAN when zero violations but not rich
+            (not is_zero_violations) * is_more_patterns * 1  # MIXED when has violations but more patterns
+            # PROBLEMATIC = 0 (default when none of above)
+        )
+        
+        # Pure list indexing - no conditionals
+        levels = [cls.PROBLEMATIC, cls.MIXED, cls.CLEAN, cls.EXCEPTIONAL]
+        return levels[min(level_score, 3)]  # min() ensures valid index
+    
+    def format_header(self) -> str:
+        """Format the report header based on celebration level."""
+        header_map = {
+            self.EXCEPTIONAL: "🧠 SDA ARCHITECTURE ANALYSIS - EXCELLENT ✅",
+            self.CLEAN: "🧠 SDA ARCHITECTURE ANALYSIS - CLEAN ✨",
+            self.MIXED: "🧠 SDA ARCHITECTURE ANALYSIS - MIXED",
+            self.PROBLEMATIC: "🧠 SDA ARCHITECTURE ANALYSIS - NEEDS WORK ⚠️"
+        }
+        return header_map[self]
+
+
+class ScanMetrics(BaseModel):
+    """Rich domain model for scan metrics with computed intelligence.
+    
+    This model demonstrates how to compute architectural richness metrics
+    without external calculation logic.
+    """
+    
+    model_config = ConfigDict(frozen=True)
+    
+    files_scanned: int
+    models_analyzed: int = 0
+    frozen_models: int = 0
+    behavioral_enums: int = 0
+    computed_fields_count: int = 0
+    protocol_boundaries: int = 0
+    
+    @computed_field
+    @property
+    def architectural_richness(self) -> float:
+        """Compute architectural richness score from metrics."""
+        # Weight different architectural patterns
+        weights = {
+            'frozen': self.frozen_models * 3,
+            'behavioral': self.behavioral_enums * 4,
+            'computed': self.computed_fields_count * 2,
+            'protocols': self.protocol_boundaries * 5
+        }
+        
+        total_score = sum(weights.values())
+        max_possible = self.models_analyzed * 14  # Sum of all weights
+        
+        # Safe division with or-pattern
+        safe_max = max_possible or 1
+        return (total_score / safe_max) * 100
+    
+    @computed_field
+    @property
+    def excellence_summary(self) -> list[str]:
+        """Generate excellence points for zero-violation modules."""
+        points = []
+        
+        # Use multiplication to conditionally add items (zero becomes empty)
+        points.extend([f"{self.frozen_models} frozen domain models with intelligence"] * bool(self.frozen_models))
+        points.extend([f"{self.behavioral_enums} behavioral enums with methods"] * bool(self.behavioral_enums))
+        points.extend([f"{self.computed_fields_count} computed fields for derived state"] * bool(self.computed_fields_count))
+        points.extend([f"{self.protocol_boundaries} clean protocol boundaries maintained"] * bool(self.protocol_boundaries))
+        
+        return points or ["Clean module structure maintained"]
+    
+    def format_summary(self) -> str:
+        """Format scan metrics summary with celebratory language."""
+        summary_lines = [
+            "📊 SCAN METRICS:",
+            f"  Files Scanned: {self.files_scanned}",
+            f"  Models Analyzed: {self.models_analyzed}",
+            f"  SDA Patterns Found: {self.computed_fields_count + self.frozen_models + self.behavioral_enums}",
+        ]
+        
+        # Add architectural richness score for exceptional modules
+        richness = self.architectural_richness
+        richness_display = f"  Architectural Richness: {richness:.1f}%" * bool(richness > 0)
+        summary_lines.extend([richness_display] * bool(richness_display))
+        
+        return "\n".join(summary_lines)
 
 
 class ArchitectureReport(BaseModel):
@@ -252,3 +439,50 @@ class ArchitectureReport(BaseModel):
             "patterns": (self.total_patterns / safe_total) * bool(total),
             "violations": (self.total_violations / safe_total) * bool(total),
         }
+    
+    @computed_field
+    @property
+    def celebration_level(self) -> CelebrationLevel:
+        """Compute celebration level from violation and pattern counts."""
+        return CelebrationLevel.from_metrics(self.total_violations, self.total_patterns)
+    
+    @computed_field
+    @property
+    def compliance_grade(self) -> ComplianceGrade:
+        """Compute compliance grade from violation count."""
+        return ComplianceGrade.from_violation_count(self.total_violations)
+    
+    @computed_field
+    @property
+    def scan_metrics(self) -> ScanMetrics:
+        """Compute scan metrics from analyzed data."""
+        # Count specific pattern types
+        computed_count = sum(len(findings) for pattern, findings in self.patterns.items() 
+                            if pattern == PositivePattern.COMPUTED_FIELDS)
+        
+        return ScanMetrics(
+            files_scanned=self.files_analyzed,
+            models_analyzed=len(self.violations) + len(self.patterns),  # Approximation
+            frozen_models=0,  # Would need deeper analysis
+            behavioral_enums=0,  # Would need deeper analysis
+            computed_fields_count=computed_count,
+            protocol_boundaries=0  # Would need deeper analysis
+        )
+    
+    @computed_field
+    @property
+    def celebration_header(self) -> str:
+        """Generate celebratory header based on celebration level - pure delegation."""
+        return self.celebration_level.format_header()
+    
+    @computed_field
+    @property
+    def scan_summary(self) -> str:
+        """Generate scan metrics summary - pure delegation."""
+        return self.scan_metrics.format_summary()
+    
+    @computed_field
+    @property
+    def compliance_assessment(self) -> str:
+        """Generate compliance assessment message - pure delegation."""
+        return self.compliance_grade.format_assessment()
